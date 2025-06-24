@@ -107,26 +107,52 @@ export default function SearchBar() {
     return text.length > length ? text.substring(0, length) + '...' : text
   }
 
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'task': return '✅'
+      case 'idea': return '💡'
+      case 'journal': return '📖'
+      case 'meeting': return '👥'
+      case 'reading': return '📚'
+      default: return '📝'
+    }
+  }
+
+  const getCategoryColors = (category: string) => {
+    switch (category) {
+      case 'task': return 'bg-gradient-to-r from-rose-100 to-pink-100 text-rose-700 dark:from-rose-900/40 dark:to-pink-900/40 dark:text-rose-300'
+      case 'idea': return 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 dark:from-amber-900/40 dark:to-yellow-900/40 dark:text-amber-300'
+      case 'journal': return 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 dark:from-emerald-900/40 dark:to-green-900/40 dark:text-emerald-300'
+      case 'meeting': return 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 dark:from-blue-900/40 dark:to-cyan-900/40 dark:text-blue-300'
+      case 'reading': return 'bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300'
+      default: return 'bg-gradient-to-r from-slate-100 to-gray-100 text-slate-700 dark:from-slate-900/40 dark:to-gray-900/40 dark:text-slate-300'
+    }
+  }
+
   return (
     <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+      <div className="relative group">
+        <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+          query || isOpen 
+            ? 'text-blue-500 dark:text-blue-400' 
+            : 'text-slate-400 dark:text-slate-500'
+        }`} size={16} />
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search notes..."
+          placeholder="Search your notes... ✨"
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}
-          className="w-full pl-9 pr-8 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="w-full pl-10 pr-10 py-3 text-sm bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-700 dark:text-slate-200"
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg hover:bg-slate-100/50 dark:hover:bg-slate-700/50"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         )}
       </div>
@@ -134,39 +160,54 @@ export default function SearchBar() {
       {isOpen && query && (
         <div
           ref={resultsRef}
-          className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 rounded-2xl shadow-xl z-50 max-h-80 overflow-y-auto scrollbar-hide"
         >
           {loading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
+            <div className="p-6 text-center">
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500/20 border-t-blue-500"></div>
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">Searching...</span>
+              </div>
             </div>
           ) : results.length > 0 ? (
-            <div className="py-2">
-              {results.map((result) => (
+            <div className="p-2">
+              {results.map((result, index) => (
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full text-left px-4 py-2 hover:bg-accent focus:bg-accent focus:outline-none"
+                  className="w-full text-left p-3 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/50 focus:bg-slate-50/80 dark:focus:bg-slate-800/50 focus:outline-none group"
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">{truncateText(result.content)}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ml-2 shrink-0 ${
-                      result.category === 'task' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                      result.category === 'idea' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                      result.category === 'journal' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                      result.category === 'meeting' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                      result.category === 'reading' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                      'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                    }`}>
-                      {result.category}
-                    </span>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm">{getCategoryEmoji(result.category || '')}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed mb-2">
+                        {truncateText(result.content, 80)}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getCategoryColors(result.category || '')}`}>
+                          {result.category}
+                        </span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                          {new Date(result.created_at).toLocaleDateString([], { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="p-4 text-center text-muted-foreground">
-              No results found
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center mx-auto mb-3">
+                <Search size={20} className="text-slate-400 dark:text-slate-500" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No results found</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Try different keywords</p>
             </div>
           )}
         </div>
