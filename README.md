@@ -133,11 +133,11 @@ pnpm dev:backend
 pnpm dev:web
 
 # Run tests
-pnpm test          # Unit tests
-pnpm e2e          # E2E tests
-pnpm lint         # Linting
-pnpm a11y         # Accessibility audit
-pnpm lh           # Performance audit
+pnpm -w test      # Unit tests (Vitest)
+pnpm -w e2e       # E2E tests (Playwright)
+pnpm -w lint      # Linting (ESLint)
+pnpm -w a11y      # Accessibility audit
+pnpm -w lh        # Performance audit
 ```
 
 **Important**: The frontend (localhost:5173) is configured to proxy API calls to the backend (localhost:8080). Make sure both are running for full functionality.
@@ -210,11 +210,11 @@ pnpm supabase:reset   # Reset local database
 
 # Quality Assurance
 pnpm build            # Build for production
-pnpm lint             # Run ESLint
-pnpm test             # Run unit tests
-pnpm e2e              # Run E2E tests
-pnpm a11y             # Accessibility audit
-pnpm lh               # Lighthouse performance audit
+pnpm -w lint          # Run ESLint
+pnpm -w test          # Run unit tests (Vitest)
+pnpm -w e2e           # Run E2E tests (Playwright)
+pnpm -w a11y          # Accessibility audit
+pnpm -w lh            # Lighthouse performance audit
 pnpm preview          # Preview production build
 ```
 
