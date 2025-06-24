@@ -1,0 +1,13 @@
+{
+  "name": "@chatnotes/edge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Edge functions will run via Vercel. Use: vercel dev'",
+    "build": "echo 'Edge functions built by Vercel'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "urls": ["http://localhost:4173"],
+  "standard": "WCAG2AA",
+  "level": "error",
+  "ignore": ["warning"],
+  "viewport": {
+    "width": 375,
+    "height": 667
+  },
+  "reporters": ["junit"],
+  "chromeLaunchConfig": {
+    "headless": true
+  }
+}
