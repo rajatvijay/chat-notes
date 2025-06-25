@@ -24,7 +24,7 @@ export default function CategoryPage() {
   if (!category || !categoryLabels[category]) {
     return (
       <div className="p-4 text-center">
-        <p className="text-muted-foreground">Category not found</p>
+        <p className="text-slate-500 dark:text-slate-400">Category not found</p>
       </div>
     )
   }
@@ -32,10 +32,7 @@ export default function CategoryPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading notes...</p>
-        </div>
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-300"></div>
       </div>
     )
   }
@@ -49,35 +46,32 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Header */}
-      <div className="sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/50 p-4">
-        <div className="flex items-center gap-3 mb-4">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+      <header className="border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-3 p-4">
           <Link
             to="/categories"
-            className="p-2 rounded-xl bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-800/80 border border-white/20 dark:border-slate-700/50"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            <ArrowLeft size={18} className="text-slate-600 dark:text-slate-300" />
+            <ArrowLeft size={18} className="text-slate-600 dark:text-slate-400" />
           </Link>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center">
-            <span className="text-2xl">
-              {category === 'task' ? '✅' : 
-               category === 'idea' ? '💡' :
-               category === 'journal' ? '📖' :
-               category === 'meeting' ? '👥' :
-               category === 'reading' ? '📚' : '📝'}
-            </span>
-          </div>
+          <span className="text-xl">
+            {category === 'task' ? '✅' : 
+             category === 'idea' ? '💡' :
+             category === 'journal' ? '📖' :
+             category === 'meeting' ? '👥' :
+             category === 'reading' ? '📚' : '📝'}
+          </span>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               {categoryLabels[category]}
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {notes.length} {notes.length === 1 ? 'note' : 'notes'}
             </p>
           </div>
         </div>
-      </div>
+      </header>
       
       <div className="p-4">
         {category === 'task' && <TasksList notes={notes} />}

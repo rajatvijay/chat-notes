@@ -50,7 +50,7 @@ export default async function handler(request: Request): Promise<Response> {
         role: 'user',
         content: body.content
       }
-    ], schema)
+    ], schema, 200, 'extract-metadata')
 
     let metadata = {}
     

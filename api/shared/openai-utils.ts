@@ -1,8 +1,9 @@
 import { enhanceSchema } from './schemas'
+import { calculateAndLogCost } from './cost-tracking'
 
 const OPENAI_API_KEY = process.env.OPENAI_KEY
 
-export async function callOpenAI(messages: Array<{role: string, content: string}>, schema?: unknown, maxTokens = 200) {
+export async function callOpenAI(messages: Array<{role: string, content: string}>, schema?: unknown, maxTokens = 200, endpoint = 'unknown') {
   const requestBody: Record<string, unknown> = {
     model: 'gpt-4o',
     messages,
@@ -33,7 +34,14 @@ export async function callOpenAI(messages: Array<{role: string, content: string}
     throw new Error('OpenAI API error')
   }
 
-  return response.json()
+  const result = await response.json()
+  
+  // Log cost for this API call
+  const inputText = messages.map(m => m.content).join(' ')
+  const outputText = result.choices?.[0]?.message?.content || ''
+  calculateAndLogCost(endpoint, inputText, outputText)
+  
+  return result
 }
 
 export async function enhanceReadingContent(content: string, link: string) {
@@ -47,7 +55,7 @@ export async function enhanceReadingContent(content: string, link: string) {
         role: 'user',
         content: `Please extract title and summary for this reading content: "${content}"\n\nURL: ${link}`
       }
-    ], enhanceSchema, 150)
+    ], enhanceSchema, 150, 'enhance-reading')
 
     try {
       return JSON.parse(enhanceData.choices[0].message.content)

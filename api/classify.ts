@@ -55,7 +55,7 @@ Only include cleaned_content for tasks when due dates are removed.`
         role: 'user',
         content: body.content
       }
-    ], classificationSchema)
+    ], classificationSchema, 200, 'classify')
     let result
 
     try {
