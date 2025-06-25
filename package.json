@@ -8,7 +8,7 @@
     "build": "pnpm -r run build",
     "a11y": "pa11y-ci --config pa11y.json",
     "lh": "lighthouse http://localhost:4173 --budget-path=lighthouse-budget.json --quiet --chrome-flags=\"--headless\"",
-    "dev": "vercel dev",
+    "dev:full": "concurrently \"pnpm dev:web\" \"vercel dev --listen 3001\"",
     "dev:web": "cd apps/web && pnpm dev",
     "dev:supabase": "supabase start",
     "supabase:stop": "supabase stop",

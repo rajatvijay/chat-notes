@@ -1,8 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_KEY')
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+const OPENAI_API_KEY = process.env.OPENAI_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 interface ClassifyRequest {
   note_id: string
@@ -42,7 +42,7 @@ export default async function handler(request: Request): Promise<Response> {
   "category": "task|idea|journal|meeting|reading|misc",
   "metadata": {
     // For tasks: "due_date" (ISO date string if found, e.g., "2024-01-15")
-    // For ideas: "idea_title" (short title), "related_idea_id" (if relates to existing idea)
+    // For ideas: "title" (short descriptive title), "summary" (brief 1-2 sentence summary)
     // For meetings: "meeting_title", "meeting_date", "meeting_time"
     // For reading: "link" (if URL found), "title", "author", "excerpt" (true/false)
   },
