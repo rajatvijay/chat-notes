@@ -1,37 +1,5 @@
 {
   "buildCommand": "pnpm build",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "pnpm install",
-  "functions": {
-    "apps/edge/api/classify.ts": {
-      "runtime": "edge"
-    },
-    "apps/edge/api/search.ts": {
-      "runtime": "edge"
-    },
-    "apps/edge/api/task-completion.ts": {
-      "runtime": "edge"
-    },
-    "apps/edge/api/task-due-date.ts": {
-      "runtime": "edge"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/classify",
-      "destination": "/apps/edge/api/classify"
-    },
-    {
-      "source": "/api/search", 
-      "destination": "/apps/edge/api/search"
-    },
-    {
-      "source": "/api/task-completion",
-      "destination": "/apps/edge/api/task-completion"
-    },
-    {
-      "source": "/api/task-due-date",
-      "destination": "/apps/edge/api/task-due-date"
-    }
-  ]
+  "installCommand": "pnpm install"
 }

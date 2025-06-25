@@ -42,3 +42,4 @@ playwright/.cache/
 # Supabase
 supabase/.temp/
 supabase/.branches/
+.vercel

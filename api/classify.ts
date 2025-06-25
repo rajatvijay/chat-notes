@@ -9,7 +9,11 @@ interface ClassifyRequest {
   content: string
 }
 
-export async function classify(request: Request): Promise<Response> {
+export const config = {
+  runtime: 'edge',
+}
+
+export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 })
   }
@@ -96,6 +100,13 @@ Only include metadata fields that are clearly present in the content.`
       metadata.cleaned_content = cleanedContent
     }
 
+    console.log('Classification result:', {
+      originalContent: body.content,
+      finalCategory,
+      cleanedContent,
+      metadata
+    })
+
     // Update note in Supabase
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
     
@@ -108,6 +119,7 @@ Only include metadata fields that are clearly present in the content.`
       .eq('id', body.note_id)
 
     if (error) {
+      console.error('Database update error:', error)
       throw new Error('Database update error')
     }
 

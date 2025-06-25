@@ -189,6 +189,91 @@ VITE_SUPABASE_ANON_KEY=<local_anon_key_from_supabase_status>
 
 ### 4. Development
 
+## Unified API Architecture
+
+This project now uses a **single source of truth** for API endpoints - Vercel Edge Functions in `apps/edge/api/`.
+
+### Development Commands
+
+```bash
+# 🔄 Default: Legacy Express server + Vite (stable development)
+npm run dev
+
+# 🎯 Unified: Run with Vercel dev (includes edge functions)
+npm run dev:full
+
+# 🗄️ Start local Supabase
+npm run dev:supabase
+
+# 🚀 Full development stack with edge functions
+npm run dev:supabase && npm run dev:full
+```
+
+### API Endpoints
+
+All API endpoints are served by edge functions:
+
+- `POST /api/classify` - Enhanced classification with metadata extraction
+- `POST /api/search` - Search functionality  
+- `POST /api/task-completion` - Task completion toggle
+- `POST /api/task-due-date` - Due date setting
+
+### Environment Setup
+
+**Development:**
+- Vercel dev server serves edge functions locally
+- Same code runs in development and production
+
+**Production:**
+- Edge functions deployed to Vercel
+- Globally distributed for better performance
+
+### Database Migrations
+
+Required migrations for full functionality:
+
+```sql
+-- Add metadata column
+ALTER TABLE notes ADD COLUMN metadata JSONB DEFAULT '{}';
+CREATE INDEX idx_notes_metadata ON notes USING gin(metadata);
+
+-- Add task completions table
+CREATE TABLE task_completions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  completed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX idx_task_completions_unique_note ON task_completions(note_id);
+```
+
+### Task Content Cleaning
+
+For tasks, the system now:
+- Preserves original content in `notes.content`
+- Stores cleaned content in `notes.metadata.cleaned_content`
+- Extracts due dates to `notes.metadata.due_date`
+- Displays cleaned content in UI while preserving data integrity
+
+### Debugging
+
+Console logs are available in:
+- **Development**: Vercel dev server terminal
+- **Production**: Vercel function logs dashboard
+
+Example log output:
+```javascript
+Classification result: {
+  originalContent: "Fix the login bug due tomorrow",
+  finalCategory: "task",
+  cleanedContent: "Fix the login bug", 
+  metadata: {
+    due_date: "2024-12-26",
+    cleaned_content: "Fix the login bug"
+  }
+}
+```
+
 #### 🚀 Quick Start - Run the Full Application
 
 ```bash
@@ -269,6 +354,11 @@ pnpm lh               # Lighthouse performance audit
 ```
 
 #### Troubleshooting
+
+If you get `Function Runtimes must have a valid version` error:
+- Make sure you have the latest Vercel CLI: `npm install -g vercel@latest`
+- The edge functions now have proper runtime configuration
+- Try `vercel dev --debug` for more detailed error information
 
 **404 on /api/classify**
 - ✅ **Fixed**: Vite now proxies API calls to backend
