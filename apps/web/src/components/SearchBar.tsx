@@ -171,7 +171,7 @@ export default function SearchBar() {
             </div>
           ) : results.length > 0 ? (
             <div className="p-2">
-              {results.map((result, index) => (
+              {results.map((result) => (
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}

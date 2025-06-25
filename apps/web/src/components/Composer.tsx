@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, ChevronDown, Sparkles, Wand2 } from 'lucide-react'
-import { Button } from '@chatnotes/ui'
+import { Send, ChevronDown, Wand2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@chatnotes/ui'
 
 interface ComposerProps {
@@ -82,20 +81,20 @@ export default function Composer({ onSend }: ComposerProps) {
   }
 
   return (
-    <div className="px-3 py-4">
+    <div className="px-4 py-5">
       {/* Category Selector Row */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Category:</span>
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 tracking-wide">Category:</span>
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
-            <button className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium ${selectedCategory.color}`}>
-              {selectedCategory.icon && <selectedCategory.icon size={12} />}
+            <button className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold shadow-lg backdrop-blur-xl border border-violet-200/50 dark:border-violet-500/30 ${selectedCategory.color}`}>
+              {selectedCategory.icon && <selectedCategory.icon size={14} />}
               {selectedCategory.label}
               <ChevronDown size={12} className="ml-1" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/20 dark:border-slate-700/30" side="top">
-            <div className="space-y-1">
+          <PopoverContent className="w-52 p-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-violet-200/50 dark:border-violet-500/30 shadow-2xl shadow-violet-500/20 rounded-3xl" side="top">
+            <div className="space-y-2">
               {categories.map((category) => (
                 <button
                   key={category.value}
@@ -103,13 +102,13 @@ export default function Composer({ onSend }: ComposerProps) {
                     setSelectedCategory(category)
                     setIsPopoverOpen(false)
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+                  className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 ${
                     selectedCategory.value === category.value 
-                      ? `${category.color} shadow-sm` 
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300'
+                      ? `${category.color} shadow-lg` 
+                      : 'hover:bg-violet-50/80 dark:hover:bg-violet-900/30 text-slate-700 dark:text-slate-300'
                   }`}
                 >
-                  {category.icon && <category.icon size={14} />}
+                  {category.icon && <category.icon size={16} />}
                   {category.label}
                 </button>
               ))}
@@ -119,7 +118,7 @@ export default function Composer({ onSend }: ComposerProps) {
       </div>
 
       {/* Input Row */}
-      <div className="flex items-end gap-3">
+      <div className="flex items-end gap-4">
         {/* Textarea */}
         <div className="flex-1 relative">
           <textarea
@@ -128,7 +127,7 @@ export default function Composer({ onSend }: ComposerProps) {
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="What's on your mind? ✨"
-            className="w-full resize-none border-0 rounded-2xl px-4 py-3 text-sm bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 min-h-[48px] max-h-32 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full resize-none border-0 rounded-3xl px-5 py-4 text-sm bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-violet-200/50 dark:border-violet-500/30 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 min-h-[52px] max-h-36 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-slate-800 dark:text-slate-100 font-medium shadow-xl shadow-violet-500/5"
             rows={1}
           />
         </div>
@@ -137,13 +136,13 @@ export default function Composer({ onSend }: ComposerProps) {
         <button
           onClick={handleSubmit}
           disabled={!content.trim()}
-          className={`p-3 rounded-2xl ${
+          className={`p-4 rounded-3xl shadow-xl ${
             content.trim()
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-              : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+              ? 'bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-violet-500/30 hover:shadow-violet-500/40'
+              : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-slate-500/10'
           }`}
         >
-          <Send size={18} />
+          <Send size={20} strokeWidth={2.5} />
         </button>
       </div>
     </div>
