@@ -25,6 +25,12 @@ export async function logCost(
   cost: number
 ): Promise<void> {
   try {
+    // Check if environment variables are available
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('Supabase environment variables not available, skipping cost logging')
+      return
+    }
+
     const supabase = getSupabaseClient()
     
     const { error } = await supabase
@@ -38,10 +44,15 @@ export async function logCost(
       })
 
     if (error) {
+      // If the table doesn't exist, just log a warning instead of failing
+      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+        console.warn('llm_costs table does not exist yet, skipping cost logging')
+        return
+      }
       console.error('Failed to log LLM cost:', error)
     }
   } catch (error) {
-    console.error('Error logging LLM cost:', error)
+    console.warn('Error logging LLM cost (non-critical):', error)
   }
 }
 

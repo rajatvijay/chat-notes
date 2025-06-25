@@ -1,11 +1,5 @@
 import { Link } from 'react-router-dom'
 import {
-  CheckSquare,
-  Lightbulb,
-  BookOpen,
-  Users,
-  Book,
-  MoreHorizontal,
   MessageCircle,
   Grid,
   Settings,

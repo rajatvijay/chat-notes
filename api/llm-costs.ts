@@ -22,6 +22,18 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     const supabase = getSupabaseClient()
 
+    // Check if environment variables are available
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase environment variables')
+      return new Response(JSON.stringify({
+        totalCost: 0,
+        totalRequests: 0,
+        dailyBreakdown: []
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
     // Get cost data from the last 30 days
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -34,21 +46,34 @@ export default async function handler(request: Request): Promise<Response> {
 
     if (error) {
       console.error('Database query error:', error)
+      // If the table doesn't exist yet, return empty data instead of failing
+      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+        return new Response(JSON.stringify({
+          totalCost: 0,
+          totalRequests: 0,
+          dailyBreakdown: []
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
       throw new Error('Failed to fetch cost data')
     }
 
+    // Handle null or empty data
+    const costsData = costs || []
+
     // Calculate totals and daily breakdown
-    const totalCost = costs.reduce((sum, entry) => sum + Number(entry.cost_usd), 0)
-    const totalRequests = costs.length
+    const totalCost = costsData.reduce((sum, entry) => sum + Number(entry.cost_usd || 0), 0)
+    const totalRequests = costsData.length
 
     // Group by date for daily breakdown
     const dailyMap = new Map<string, { cost: number; requests: number }>()
     
-    costs.forEach(entry => {
+    costsData.forEach(entry => {
       const date = entry.date
       const existing = dailyMap.get(date) || { cost: 0, requests: 0 }
       dailyMap.set(date, {
-        cost: existing.cost + Number(entry.cost_usd),
+        cost: existing.cost + Number(entry.cost_usd || 0),
         requests: existing.requests + 1
       })
     })
@@ -75,6 +100,13 @@ export default async function handler(request: Request): Promise<Response> {
 
   } catch (error) {
     console.error('LLM costs fetch error:', error)
-    return new Response('Internal server error', { status: 500 })
+    // Return empty data instead of failing completely
+    return new Response(JSON.stringify({
+      totalCost: 0,
+      totalRequests: 0,
+      dailyBreakdown: []
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 }

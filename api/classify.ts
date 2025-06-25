@@ -23,6 +23,30 @@ export default async function handler(request: Request): Promise<Response> {
       return new Response('Missing note_id or content', { status: 400 })
     }
 
+    // Check if OpenAI API key is available
+    if (!process.env.OPENAI_KEY) {
+      console.error('OpenAI API key not available')
+      // Return a fallback classification
+      const fallbackResult = {
+        category: 'misc',
+        metadata: {}
+      }
+      
+      // Try to update note with fallback category
+      try {
+        await updateNoteMetadata(body.note_id, {
+          category: 'misc',
+          metadata: {}
+        })
+      } catch (dbError) {
+        console.warn('Failed to update note with fallback category:', dbError)
+      }
+      
+      return new Response(JSON.stringify(fallbackResult), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
     // Call OpenAI GPT-4o for classification and metadata extraction
     const openaiData = await callOpenAI([
       {
@@ -110,10 +134,15 @@ Only include cleaned_content for tasks when due dates are removed.`
     })
 
     // Update note in Supabase
-    await updateNoteMetadata(body.note_id, {
-      category: finalCategory,
-      metadata: metadata,
-    })
+    try {
+      await updateNoteMetadata(body.note_id, {
+        category: finalCategory,
+        metadata: metadata,
+      })
+    } catch (dbError) {
+      console.warn('Failed to update note metadata, but continuing with response:', dbError)
+      // Continue with the response even if database update fails
+    }
 
     return new Response(
       JSON.stringify({
@@ -126,6 +155,15 @@ Only include cleaned_content for tasks when due dates are removed.`
     )
   } catch (error) {
     console.error('Classification error:', error)
-    return new Response('Internal server error', { status: 500 })
+    
+    // Return a fallback response instead of 500 error
+    const fallbackResult = {
+      category: 'misc' as const,
+      metadata: {}
+    }
+    
+    return new Response(JSON.stringify(fallbackResult), {
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 }
