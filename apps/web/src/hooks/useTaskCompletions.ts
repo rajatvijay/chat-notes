@@ -6,7 +6,7 @@ export function useTaskCompletions(noteIds: string[]) {
   const [loading, setLoading] = useState(true)
 
   // Memoize the noteIds to prevent unnecessary re-fetches
-  const memoizedNoteIds = useMemo(() => noteIds, [noteIds.join(',')])
+  const memoizedNoteIds = useMemo(() => noteIds, [noteIds])
 
   useEffect(() => {
     if (memoizedNoteIds.length === 0) {

@@ -27,9 +27,8 @@ const classificationSchema = {
         due_date: { type: "string" },
         title: { type: "string" },
         summary: { type: "string" },
-        meeting_title: { type: "string" },
-        meeting_date: { type: "string" },
-        meeting_time: { type: "string" },
+        date: { type: "string" },
+        time: { type: "string" },
         link: { type: "string" },
         cleaned_content: { type: "string" }
       },
@@ -89,7 +88,9 @@ For ideas:
 - Extract "title" (short descriptive title) and "summary" (brief 1-2 sentence summary)
 
 For meetings:
-- Extract "meeting_title", "meeting_date", "meeting_time" if present
+- Extract "title" (meeting title), "date" (ISO date string YYYY-MM-DD), "time" (HH:MM format) if present
+- Convert relative dates to ISO format. Today is ${new Date().toISOString().split('T')[0]}
+- Extract time in 24-hour format (e.g., "14:30" for 2:30 PM)
 
 For reading:
 - Extract "link" if URL found

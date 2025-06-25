@@ -13,7 +13,7 @@ interface Note {
   category: string | null
   created_at: string
   source: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface NotesListProps {

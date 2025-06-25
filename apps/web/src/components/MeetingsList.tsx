@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, Calendar, Clock } from 'lucide-react'
+import { Users, Calendar, Clock, Edit2, Save, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,9 @@ interface Note {
   created_at: string
   source: string
   metadata?: {
-    meeting_title?: string
-    meeting_date?: string
-    meeting_time?: string
-    related_meeting_id?: string
+    title?: string
+    date?: string
+    time?: string
   }
 }
 
@@ -28,6 +27,10 @@ interface MeetingsListProps {
 
 export default function MeetingsList({ notes }: MeetingsListProps) {
   const [selectedMeeting, setSelectedMeeting] = useState<string | null>(null)
+  const [editingMeeting, setEditingMeeting] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editTime, setEditTime] = useState('')
 
   if (notes.length === 0) {
     return (
@@ -45,23 +48,28 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
     )
   }
 
-  // Group notes by meeting (using related_meeting_id or creating groups)
+  // Group notes by meeting date and time
   const groupedMeetings = notes.reduce((acc, note) => {
-    const meetingId = note.metadata?.related_meeting_id || note.id
-    if (!acc[meetingId]) {
-      acc[meetingId] = []
+    const date = note.metadata?.date || new Date(note.created_at).toISOString().split('T')[0]
+    const time = note.metadata?.time || new Date(note.created_at).toTimeString().slice(0, 5)
+    const key = `${date}_${time}`
+    
+    if (!acc[key]) {
+      acc[key] = []
     }
-    acc[meetingId].push(note)
+    acc[key].push(note)
     return acc
   }, {} as Record<string, Note[]>)
 
   const getMeetingTitle = (notes: Note[]) => {
-    const firstNote = notes[0]
-    if (firstNote.metadata?.meeting_title) {
-      return firstNote.metadata.meeting_title
+    // Use title from any note that has one
+    const noteWithTitle = notes.find(note => note.metadata?.title)
+    if (noteWithTitle?.metadata?.title) {
+      return noteWithTitle.metadata.title
     }
     
-    // Extract potential meeting title from content
+    // Fallback to extracting from content
+    const firstNote = notes[0]
     const content = firstNote.content
     const sentences = content.split(/[.!?]+/)
     const firstSentence = sentences[0]?.trim()
@@ -76,19 +84,67 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
 
   const getMeetingDateTime = (notes: Note[]) => {
     const firstNote = notes[0]
-    if (firstNote.metadata?.meeting_date && firstNote.metadata?.meeting_time) {
+    if (firstNote.metadata?.date && firstNote.metadata?.time) {
       return {
-        date: firstNote.metadata.meeting_date,
-        time: firstNote.metadata.meeting_time
+        date: firstNote.metadata.date,
+        time: firstNote.metadata.time
       }
     }
     
     // Use the creation date/time as fallback
     const createdAt = new Date(firstNote.created_at)
     return {
-      date: createdAt.toLocaleDateString(),
-      time: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      date: createdAt.toISOString().split('T')[0],
+      time: createdAt.toTimeString().slice(0, 5)
     }
+  }
+
+  const startEditing = (meetingKey: string, notes: Note[]) => {
+    const { date, time } = getMeetingDateTime(notes)
+    const title = getMeetingTitle(notes)
+    
+    setEditingMeeting(meetingKey)
+    setEditTitle(title)
+    setEditDate(date)
+    setEditTime(time)
+  }
+
+  const saveEditing = async (_meetingKey: string, notes: Note[]) => {
+    try {
+      const noteIds = notes.map(note => note.id)
+      
+      const response = await fetch('/api/update-meeting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          note_ids: noteIds,
+          title: editTitle,
+          date: editDate,
+          time: editTime
+        })
+      })
+
+      if (response.ok) {
+        // Refresh the page or update local state
+        window.location.reload()
+      } else {
+        console.error('Failed to update meeting metadata')
+      }
+    } catch (error) {
+      console.error('Error updating meeting:', error)
+    }
+    
+    setEditingMeeting(null)
+    setEditTitle('')
+    setEditDate('')
+    setEditTime('')
+  }
+
+  const cancelEditing = () => {
+    setEditingMeeting(null)
+    setEditTitle('')
+    setEditDate('')
+    setEditTime('')
   }
 
   const formatMeetingDate = (dateString: string) => {
@@ -136,30 +192,100 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
                       <Users size={18} className="text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
-                        {meetingTitle}
-                      </h3>
-                      <div className="flex items-center gap-4 mb-2">
-                        <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-                          <Calendar size={12} />
-                          <span>{formattedDate}</span>
+                      {editingMeeting === meetingId ? (
+                        <div 
+                          className="space-y-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onFocus={(e) => e.stopPropagation()}
+                            className="w-full px-2 py-1 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Meeting title"
+                          />
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={editDate}
+                              onChange={(e) => setEditDate(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              className="flex-1 px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <input
+                              type="time"
+                              value={editTime}
+                              onChange={(e) => setEditTime(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              className="flex-1 px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                saveEditing(meetingId, meetingNotes)
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/40"
+                            >
+                              <Save size={12} />
+                              Save
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                cancelEditing()
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                              <X size={12} />
+                              Cancel
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-                          <Clock size={12} />
-                          <span>{time}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                          {meetingNotes.length === 1 ? '1 note' : `${meetingNotes.length} notes`}
-                        </span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                          {new Date(meetingNotes[0].created_at).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+                              {meetingTitle}
+                            </h3>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                startEditing(meetingId, meetingNotes)
+                              }}
+                              className="opacity-60 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-all bg-slate-100/50 hover:bg-slate-200/70 dark:bg-slate-700/50 dark:hover:bg-slate-600/70 rounded-md"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-4 mb-2">
+                            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                              <Calendar size={12} />
+                              <span>{formattedDate}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                              <Clock size={12} />
+                              <span>{time}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              {meetingNotes.length === 1 ? '1 note' : `${meetingNotes.length} notes`}
+                            </span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                              {new Date(meetingNotes[0].created_at).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
