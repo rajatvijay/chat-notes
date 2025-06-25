@@ -7,12 +7,7 @@ interface SearchRequest {
   query: string
 }
 
-interface SearchResult {
-  id: string
-  content: string
-  category: string | null
-  created_at: string
-}
+// Interface removed as it's not used - SearchResult structure is inline
 
 export const config = {
   runtime: 'edge',

@@ -1,7 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+import { getSupabaseClient } from './shared/supabase-utils'
 
 interface UpdateMeetingRequest {
   note_ids: string[]
@@ -10,15 +7,7 @@ interface UpdateMeetingRequest {
   time: string
 }
 
-const updateMeetingSchema = {
-  type: "object",
-  properties: {
-    success: { type: "boolean" },
-    updated_count: { type: "number" }
-  },
-  required: ["success", "updated_count"],
-  additionalProperties: false
-}
+// Schema removed as it's not used in this endpoint
 
 export const config = {
   runtime: 'edge',
@@ -40,7 +29,7 @@ export default async function handler(request: Request): Promise<Response> {
       return new Response('Missing title, date, or time', { status: 400 })
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = getSupabaseClient()
 
     let updatedCount = 0
 

@@ -1,8 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
-
-const OPENAI_API_KEY = process.env.OPENAI_KEY
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+import { classificationSchema } from './shared/schemas'
+import { callOpenAI, enhanceReadingContent } from './shared/openai-utils'
+import { updateNoteMetadata, validCategories } from './shared/supabase-utils'
 
 interface ClassifyRequest {
   note_id: string
@@ -11,43 +9,6 @@ interface ClassifyRequest {
 
 export const config = {
   runtime: 'edge',
-}
-
-// JSON schemas for structured output
-const classificationSchema = {
-  type: "object",
-  properties: {
-    category: {
-      type: "string",
-      enum: ["task", "idea", "journal", "meeting", "reading", "misc"]
-    },
-    metadata: {
-      type: "object",
-      properties: {
-        due_date: { type: "string" },
-        title: { type: "string" },
-        summary: { type: "string" },
-        date: { type: "string" },
-        time: { type: "string" },
-        link: { type: "string" },
-        cleaned_content: { type: "string" }
-      },
-      additionalProperties: false
-    },
-    cleaned_content: { type: "string" }
-  },
-  required: ["category", "metadata"],
-  additionalProperties: false
-}
-
-const enhanceSchema = {
-  type: "object",
-  properties: {
-    title: { type: "string" },
-    summary: { type: "string" }
-  },
-  required: ["title", "summary"],
-  additionalProperties: false
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -63,20 +24,10 @@ export default async function handler(request: Request): Promise<Response> {
     }
 
     // Call OpenAI GPT-4o for classification and metadata extraction
-    const openaiResponse = await fetch(
-      'https://api.openai.com/v1/chat/completions',
+    const openaiData = await callOpenAI([
       {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: `Classify the note content and extract metadata based on these rules:
+        role: 'system',
+        content: `Classify the note content and extract metadata based on these rules:
 
 For tasks:
 - Extract due date from phrases like: "due tomorrow", "due next week", "by Friday", "deadline Monday", "needs to be done by [date]", "complete by [date]", specific dates like "January 15", "15th", "next Tuesday"
@@ -98,31 +49,13 @@ For reading:
 
 For other categories, include only clearly present metadata fields.
 
-Only include cleaned_content for tasks when due dates are removed.`,
-            },
-            {
-              role: 'user',
-              content: body.content,
-            },
-          ],
-          max_tokens: 200,
-          temperature: 0,
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "classification_result",
-              schema: classificationSchema
-            }
-          }
-        }),
+Only include cleaned_content for tasks when due dates are removed.`
+      },
+      {
+        role: 'user',
+        content: body.content
       }
-    )
-
-    if (!openaiResponse.ok) {
-      throw new Error('OpenAI API error')
-    }
-
-    const openaiData = await openaiResponse.json()
+    ], classificationSchema)
     let result
 
     try {
@@ -148,14 +81,6 @@ Only include cleaned_content for tasks when due dates are removed.`,
     }
 
     // Validate category
-    const validCategories = [
-      'task',
-      'idea',
-      'journal',
-      'meeting',
-      'reading',
-      'misc',
-    ]
     const finalCategory = validCategories.includes(result.category)
       ? result.category
       : 'misc'
@@ -170,58 +95,10 @@ Only include cleaned_content for tasks when due dates are removed.`,
     // For reading content with links, fetch title and summary via LLM
     if (finalCategory === 'reading' && metadata.link) {
       console.log('Reading content with link:', metadata.link)
-      try {
-        const enhanceResponse = await fetch(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are tasked with extracting title and summary for reading content. 
-                
-                First, try to fetch information about the URL: ${metadata.link}
-                
-                If you cannot access the URL, generate a reasonable title and summary based on the URL structure and any context provided by the user.`,
-                },
-                {
-                  role: 'user',
-                  content: `Please extract title and summary for this reading content: "${body.content}"\n\nURL: ${metadata.link}`,
-                },
-              ],
-              max_tokens: 150,
-              temperature: 0,
-              response_format: {
-                type: "json_schema",
-                json_schema: {
-                  name: "enhance_result",
-                  schema: enhanceSchema
-                }
-              }
-            }),
-          }
-        )
-
-        if (enhanceResponse.ok) {
-          const enhanceData = await enhanceResponse.json()
-          console.log('Enhance data:', enhanceData)
-          try {
-            const enhancedResult = JSON.parse(enhanceData.choices[0].message.content)
-            metadata.title = enhancedResult.title
-            metadata.summary = enhancedResult.summary
-          } catch (e) {
-            console.warn('Failed to parse enhanced reading metadata:', e)
-            console.warn('Raw content:', enhanceData.choices[0].message.content)
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to enhance reading metadata:', error)
+      const enhancedResult = await enhanceReadingContent(body.content, metadata.link)
+      if (enhancedResult) {
+        metadata.title = enhancedResult.title
+        metadata.summary = enhancedResult.summary
       }
     }
 
@@ -233,20 +110,10 @@ Only include cleaned_content for tasks when due dates are removed.`,
     })
 
     // Update note in Supabase
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
-    const { error } = await supabase
-      .from('notes')
-      .update({
-        category: finalCategory,
-        metadata: metadata,
-      })
-      .eq('id', body.note_id)
-
-    if (error) {
-      console.error('Database update error:', error)
-      throw new Error('Database update error')
-    }
+    await updateNoteMetadata(body.note_id, {
+      category: finalCategory,
+      metadata: metadata,
+    })
 
     return new Response(
       JSON.stringify({
