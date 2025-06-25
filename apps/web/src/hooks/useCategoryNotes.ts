@@ -7,6 +7,7 @@ interface Note {
   category: string | null
   created_at: string
   source: string
+  metadata?: Record<string, any>
 }
 
 export function useCategoryNotes(category: string) {

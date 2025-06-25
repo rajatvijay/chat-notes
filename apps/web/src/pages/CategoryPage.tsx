@@ -1,6 +1,11 @@
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import NotesList from '../components/NotesList'
+import TasksList from '../components/TasksList'
+import IdeasList from '../components/IdeasList'
+import JournalList from '../components/JournalList'
+import MeetingsList from '../components/MeetingsList'
+import ReadingList from '../components/ReadingList'
 import { useCategoryNotes } from '../hooks/useCategoryNotes'
 
 const categoryLabels: Record<string, string> = {
@@ -75,7 +80,12 @@ export default function CategoryPage() {
       </div>
       
       <div className="p-4">
-        <NotesList notes={notes} />
+        {category === 'task' && <TasksList notes={notes} />}
+        {category === 'idea' && <IdeasList notes={notes} />}
+        {category === 'journal' && <JournalList notes={notes} />}
+        {category === 'meeting' && <MeetingsList notes={notes} />}
+        {category === 'reading' && <ReadingList notes={notes} />}
+        {category === 'misc' && <NotesList notes={notes} />}
       </div>
     </div>
   )
