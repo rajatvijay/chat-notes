@@ -8,9 +8,6 @@ interface TaskDueDateRequest {
   due_date: string
 }
 
-export const config = {
-  runtime: 'edge',
-}
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {

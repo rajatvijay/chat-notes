@@ -1,8 +1,5 @@
 import { getSupabaseClient } from './shared/supabase-utils'
 
-export const config = {
-  runtime: 'edge',
-}
 
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy'

@@ -9,9 +9,6 @@ interface UpdateMeetingRequest {
 
 // Schema removed as it's not used in this endpoint
 
-export const config = {
-  runtime: 'edge',
-}
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {

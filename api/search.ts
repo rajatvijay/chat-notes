@@ -9,9 +9,6 @@ interface SearchRequest {
 
 // Interface removed as it's not used - SearchResult structure is inline
 
-export const config = {
-  runtime: 'edge',
-}
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
