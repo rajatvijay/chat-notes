@@ -113,10 +113,11 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
     try {
       const noteIds = notes.map(note => note.id)
       
-      const response = await fetch('/api/update-meeting', {
+      const response = await fetch('/api/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'update_meeting',
           note_ids: noteIds,
           title: editTitle,
           date: editDate,

@@ -6,12 +6,13 @@ export function useTaskOperations() {
   const toggleTaskCompletion = async (noteId: string, completed: boolean) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/task-completion', {
+      const response = await fetch('/api/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: 'task_completion',
           note_id: noteId,
           completed: completed
         })
@@ -33,12 +34,13 @@ export function useTaskOperations() {
   const setTaskDueDate = async (noteId: string, dueDate: string) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/task-due-date', {
+      const response = await fetch('/api/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: 'task_due_date',
           note_id: noteId,
           due_date: dueDate
         })
