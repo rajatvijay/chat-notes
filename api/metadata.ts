@@ -1,6 +1,6 @@
-import { metadataSchemas } from './shared/schemas'
-import { callOpenAI, enhanceReadingContent, buildCategoryPrompt } from './shared/openai-utils'
-import { updateNoteMetadata, getSupabaseClient } from './shared/supabase-utils'
+import { metadataSchemas } from './shared/schemas.js'
+import { callOpenAI, enhanceReadingContent, buildCategoryPrompt } from './shared/openai-utils.js'
+import { updateNoteMetadata, getSupabaseClient } from './shared/supabase-utils.js'
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL

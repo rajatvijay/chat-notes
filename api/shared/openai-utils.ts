@@ -1,5 +1,5 @@
-import { enhanceSchema } from './schemas'
-import { calculateAndLogCost } from './cost-tracking'
+import { enhanceSchema } from './schemas.js'
+import { calculateAndLogCost } from './cost-tracking.js'
 
 const OPENAI_API_KEY = process.env.OPENAI_KEY
 

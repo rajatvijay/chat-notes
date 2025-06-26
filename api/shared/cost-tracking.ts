@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase-utils'
+import { getSupabaseClient } from './supabase-utils.js'
 
 // GPT-4o pricing (as of 2024)
 const GPT4O_PRICING = {

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './shared/supabase-utils'
+import { getSupabaseClient } from './shared/supabase-utils.js'
 
 interface CostSummary {
   totalCost: number

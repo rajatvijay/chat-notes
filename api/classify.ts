@@ -1,6 +1,6 @@
-import { classificationSchema } from './shared/schemas'
-import { callOpenAI, enhanceReadingContent } from './shared/openai-utils'
-import { updateNoteMetadata, validCategories } from './shared/supabase-utils'
+import { classificationSchema } from './shared/schemas.js'
+import { callOpenAI, enhanceReadingContent } from './shared/openai-utils.js'
+import { updateNoteMetadata, validCategories } from './shared/supabase-utils.js'
 
 interface ClassifyRequest {
   note_id: string
