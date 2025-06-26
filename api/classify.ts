@@ -1,3 +1,4 @@
+import { VercelRequest, VercelResponse } from '@vercel/node'
 import { classificationSchema } from './shared/schemas.js'
 import { callOpenAI, enhanceReadingContent } from './shared/openai-utils.js'
 import { updateNoteMetadata, validCategories } from './shared/supabase-utils.js'
@@ -7,17 +8,16 @@ interface ClassifyRequest {
   content: string
 }
 
-
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const body: ClassifyRequest = await request.json()
+    const body: ClassifyRequest = req.body
 
     if (!body.note_id || !body.content) {
-      return new Response('Missing note_id or content', { status: 400 })
+      return res.status(400).json({ error: 'Missing note_id or content' })
     }
 
     // Check if OpenAI API key is available
@@ -39,9 +39,7 @@ export default async function handler(request: Request): Promise<Response> {
         console.warn('Failed to update note with fallback category:', dbError)
       }
       
-      return new Response(JSON.stringify(fallbackResult), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return res.status(200).json(fallbackResult)
     }
 
     // Call OpenAI GPT-4o for classification and metadata extraction
@@ -149,15 +147,10 @@ Only include cleaned_content for tasks when due dates are removed.`
       // Continue with the response even if database update fails
     }
 
-    return new Response(
-      JSON.stringify({
-        category: finalCategory,
-        metadata: metadata,
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    return res.status(200).json({
+      category: finalCategory,
+      metadata: metadata,
+    })
   } catch (error) {
     console.error('Classification error:', error)
     
@@ -167,8 +160,6 @@ Only include cleaned_content for tasks when due dates are removed.`
       metadata: {}
     }
     
-    return new Response(JSON.stringify(fallbackResult), {
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return res.status(200).json(fallbackResult)
   }
 }

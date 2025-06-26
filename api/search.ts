@@ -1,3 +1,4 @@
+import { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -7,19 +8,16 @@ interface SearchRequest {
   query: string
 }
 
-// Interface removed as it's not used - SearchResult structure is inline
-
-
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const body: SearchRequest = await request.json()
+    const body: SearchRequest = req.body
     
     if (!body.query || !body.query.trim()) {
-      return new Response('Missing or empty query', { status: 400 })
+      return res.status(400).json({ error: 'Missing or empty query' })
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
@@ -38,14 +36,12 @@ export default async function handler(request: Request): Promise<Response> {
       throw new Error('Database search error')
     }
 
-    return new Response(JSON.stringify({ 
+    return res.status(200).json({ 
       results: results || []
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
     console.error('Search error:', error)
-    return new Response('Internal server error', { status: 500 })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }

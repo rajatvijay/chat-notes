@@ -1,3 +1,4 @@
+import { VercelRequest, VercelResponse } from '@vercel/node'
 import { metadataSchemas } from './shared/schemas.js'
 import { callOpenAI, enhanceReadingContent, buildCategoryPrompt } from './shared/openai-utils.js'
 import { updateNoteMetadata, getSupabaseClient } from './shared/supabase-utils.js'
@@ -41,35 +42,33 @@ interface TaskDueDateRequest {
 
 type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const body: MetadataRequest = await request.json()
+    const body: MetadataRequest = req.body
     
     if (!body.action) {
-      return new Response('Missing action', { status: 400 })
+      return res.status(400).json({ error: 'Missing action' })
     }
 
     if (body.action === 'extract') {
       const extractBody = body as ExtractMetadataRequest
       
       if (!extractBody.note_id || !extractBody.content || !extractBody.category) {
-        return new Response('Missing note_id, content, or category', { status: 400 })
+        return res.status(400).json({ error: 'Missing note_id, content, or category' })
       }
 
       // Skip metadata extraction for journal and misc
       if (extractBody.category === 'journal' || extractBody.category === 'misc') {
-        return new Response(JSON.stringify({ metadata: {} }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+        return res.status(200).json({ metadata: {} })
       }
 
       const schema = metadataSchemas[extractBody.category as keyof typeof metadataSchemas]
       if (!schema) {
-        return new Response('Invalid category', { status: 400 })
+        return res.status(400).json({ error: 'Invalid category' })
       }
 
       // Build category-specific prompt
@@ -108,19 +107,17 @@ export default async function handler(request: Request): Promise<Response> {
       // Update note in Supabase
       await updateNoteMetadata(extractBody.note_id, { metadata })
 
-      return new Response(JSON.stringify({ metadata }), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return res.status(200).json({ metadata })
 
     } else if (body.action === 'update') {
       const updateBody = body as UpdateMetadataRequest
       
       if (!updateBody.note_id) {
-        return new Response('Missing note_id', { status: 400 })
+        return res.status(400).json({ error: 'Missing note_id' })
       }
 
       if (!updateBody.metadata || typeof updateBody.metadata !== 'object') {
-        return new Response('Missing or invalid metadata', { status: 400 })
+        return res.status(400).json({ error: 'Missing or invalid metadata' })
       }
 
       const supabase = getSupabaseClient()
@@ -136,21 +133,19 @@ export default async function handler(request: Request): Promise<Response> {
         throw new Error('Database update error')
       }
 
-      return new Response(JSON.stringify({ 
+      return res.status(200).json({ 
         success: true
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       })
 
     } else if (body.action === 'update_meeting') {
       const meetingBody = body as UpdateMeetingRequest
       
       if (!meetingBody.note_ids || !Array.isArray(meetingBody.note_ids) || meetingBody.note_ids.length === 0) {
-        return new Response('Missing or invalid note_ids array', { status: 400 })
+        return res.status(400).json({ error: 'Missing or invalid note_ids array' })
       }
 
       if (!meetingBody.title || !meetingBody.date || !meetingBody.time) {
-        return new Response('Missing title, date, or time', { status: 400 })
+        return res.status(400).json({ error: 'Missing title, date, or time' })
       }
 
       const supabase = getSupabaseClient()
@@ -190,18 +185,16 @@ export default async function handler(request: Request): Promise<Response> {
         updatedCount++
       }
 
-      return new Response(JSON.stringify({ 
+      return res.status(200).json({ 
         success: true,
         updated_count: updatedCount
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       })
 
     } else if (body.action === 'task_completion') {
       const completionBody = body as TaskCompletionRequest
       
       if (!completionBody.note_id) {
-        return new Response('Missing note_id', { status: 400 })
+        return res.status(400).json({ error: 'Missing note_id' })
       }
 
       const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
@@ -227,15 +220,13 @@ export default async function handler(request: Request): Promise<Response> {
         }
       }
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return res.status(200).json({ success: true })
 
     } else if (body.action === 'task_due_date') {
       const dueDateBody = body as TaskDueDateRequest
       
       if (!dueDateBody.note_id || !dueDateBody.due_date) {
-        return new Response('Missing note_id or due_date', { status: 400 })
+        return res.status(400).json({ error: 'Missing note_id or due_date' })
       }
 
       const supabase = getSupabaseClient()
@@ -265,16 +256,14 @@ export default async function handler(request: Request): Promise<Response> {
         throw error
       }
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return res.status(200).json({ success: true })
 
     } else {
-      return new Response('Invalid action', { status: 400 })
+      return res.status(400).json({ error: 'Invalid action' })
     }
 
   } catch (error) {
     console.error('Metadata operation error:', error)
-    return new Response('Internal server error', { status: 500 })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }

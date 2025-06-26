@@ -1,3 +1,4 @@
+import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSupabaseClient } from './shared/supabase-utils.js'
 
 interface CostSummary {
@@ -11,9 +12,9 @@ interface CostSummary {
 }
 
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'GET') {
-    return new Response('Method not allowed', { status: 405 })
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
@@ -22,12 +23,10 @@ export default async function handler(request: Request): Promise<Response> {
     // Check if environment variables are available
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Missing Supabase environment variables')
-      return new Response(JSON.stringify({
+      return res.status(200).json({
         totalCost: 0,
         totalRequests: 0,
         dailyBreakdown: []
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       })
     }
 
@@ -45,12 +44,10 @@ export default async function handler(request: Request): Promise<Response> {
       console.error('Database query error:', error)
       // If the table doesn't exist yet, return empty data instead of failing
       if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-        return new Response(JSON.stringify({
+        return res.status(200).json({
           totalCost: 0,
           totalRequests: 0,
           dailyBreakdown: []
-        }), {
-          headers: { 'Content-Type': 'application/json' }
         })
       }
       throw new Error('Failed to fetch cost data')
@@ -91,19 +88,15 @@ export default async function handler(request: Request): Promise<Response> {
       dailyBreakdown
     }
 
-    return new Response(JSON.stringify(response), {
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return res.status(200).json(response)
 
   } catch (error) {
     console.error('LLM costs fetch error:', error)
     // Return empty data instead of failing completely
-    return new Response(JSON.stringify({
+    return res.status(200).json({
       totalCost: 0,
       totalRequests: 0,
       dailyBreakdown: []
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     })
   }
 }

@@ -1,3 +1,4 @@
+import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSupabaseClient } from './shared/supabase-utils.js'
 
 
@@ -12,7 +13,7 @@ interface HealthCheck {
   uptime: number
 }
 
-export default async function handler(): Promise<Response> {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now()
   
   try {
@@ -71,13 +72,8 @@ export default async function handler(): Promise<Response> {
     const statusCode = overallStatus === 'healthy' ? 200 : 
                       overallStatus === 'degraded' ? 200 : 503
 
-    return new Response(JSON.stringify(healthCheck, null, 2), {
-      status: statusCode,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    })
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return res.status(statusCode).json(healthCheck)
 
   } catch (error) {
     const errorHealth: HealthCheck = {
@@ -91,12 +87,7 @@ export default async function handler(): Promise<Response> {
       uptime: Date.now() - startTime
     }
 
-    return new Response(JSON.stringify(errorHealth, null, 2), {
-      status: 503,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    })
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return res.status(503).json(errorHealth)
   }
 }
