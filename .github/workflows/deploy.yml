@@ -61,15 +61,32 @@ jobs:
           vercel-args: '--prod'
           working-directory: ./
 
+      - name: Debug deployment outputs
+        run: |
+          echo "Deploy outputs:"
+          echo "url: ${{ steps.deploy.outputs.url }}"
+          echo "preview-url: ${{ steps.deploy.outputs.preview-url }}"
+          echo "outputs: ${{ steps.deploy.outputs }}"
+
       - name: Health check
         run: |
           sleep 30
-          curl -f ${{ steps.deploy.outputs.url }}/api/health || exit 1
+          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "url output is empty, trying preview-url"
+            DEPLOY_URL="${{ steps.deploy.outputs.preview-url }}"
+          fi
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "Error: Both url and preview-url outputs are empty"
+            exit 1
+          fi
+          echo "Health checking: $DEPLOY_URL/api/health"
+          curl -f "$DEPLOY_URL/api/health" || exit 1
 
       - name: Lighthouse performance check
         uses: treosh/lighthouse-ci-action@v10
         with:
-          urls: ${{ steps.deploy.outputs.url }}
+          urls: ${{ steps.deploy.outputs.url || steps.deploy.outputs.preview-url }}
           configPath: lighthouse-budget.json
           uploadArtifacts: true
           temporaryPublicStorage: true
@@ -78,5 +95,9 @@ jobs:
         if: success()
         run: |
           echo "🎉 Deployment successful!"
-          echo "URL: ${{ steps.deploy.outputs.url }}"
-          echo "Health check: ${{ steps.deploy.outputs.url }}/api/health"
+          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+          if [ -z "$DEPLOY_URL" ]; then
+            DEPLOY_URL="${{ steps.deploy.outputs.preview-url }}"
+          fi
+          echo "URL: $DEPLOY_URL"
+          echo "Health check: $DEPLOY_URL/api/health"
