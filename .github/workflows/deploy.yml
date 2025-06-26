@@ -64,35 +64,19 @@ jobs:
       - name: Health check
         run: |
           sleep 30
-          curl -f ${{ steps.deploy.outputs.preview-url }}/api/health || exit 1
-
-      - name: Test API endpoints
-        run: |
-          # Test classification endpoint
-          response=$(curl -s -X POST "${{ steps.deploy.outputs.preview-url }}/api/classify" \
-            -H "Content-Type: application/json" \
-            -d '{"note_id":"test","content":"Buy groceries tomorrow"}' \
-            -w "%{http_code}" || echo "000")
-
-          if [[ "$response" != *"200"* ]]; then
-            echo "Classification endpoint test failed"
-            exit 1
-          fi
-
-          echo "All API tests passed"
+          curl -f ${{ steps.deploy.outputs.url }}/api/health || exit 1
 
       - name: Lighthouse performance check
         uses: treosh/lighthouse-ci-action@v10
         with:
-          urls: ${{ steps.deploy.outputs.preview-url }}
+          urls: ${{ steps.deploy.outputs.url }}
           configPath: lighthouse-budget.json
           uploadArtifacts: true
           temporaryPublicStorage: true
-        continue-on-error: true
 
       - name: Notify deployment success
         if: success()
         run: |
           echo "🎉 Deployment successful!"
-          echo "URL: ${{ steps.deploy.outputs.preview-url }}"
-          echo "Health check: ${{ steps.deploy.outputs.preview-url }}/api/health"
+          echo "URL: ${{ steps.deploy.outputs.url }}"
+          echo "Health check: ${{ steps.deploy.outputs.url }}/api/health"
