@@ -210,6 +210,7 @@ export default function ChatPage() {
                           onChange={(e) => handleTypeChange(note.id, e.target.value)}
                           disabled={changingType === note.id || classifyingNotes.has(note.id)}
                           className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-50"
+                          aria-label="Note category"
                         >
                           <option value="">{classifyingNotes.has(note.id) ? 'Classifying...' : 'Select type...'}</option>
                           <option value="task">Task</option>
@@ -233,7 +234,7 @@ export default function ChatPage() {
                             <Edit2 size={12} />
                           </button>
                         )}
-                        <span className="text-xs text-slate-400 dark:text-slate-500">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
                           {new Date(note.created_at).toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 

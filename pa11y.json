@@ -1,5 +1,5 @@
 {
-  "urls": ["http://localhost:4173"],
+  "urls": ["http://localhost:4175"],
   "standard": "WCAG2AA",
   "level": "error",
   "ignore": ["warning"],

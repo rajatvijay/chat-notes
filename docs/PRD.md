@@ -1,3 +1,5 @@
+> TODO: Remove things that does not make sense from a personal project perspective.
+
 - PRD
   # A. Product Requirements Document (PRD) — **ChatNotes v1**
   | Field              | Value                                           |

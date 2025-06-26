@@ -1,14 +1,24 @@
+> TODO: Remove things that does not make sense from a personal project perspective.
+
 - Tech Spec
+
   # ChatNotes — Technical Specification v1.1 (final)
+
   **Product version:** v1.0 (feature-complete)
   **Spec version:** 1.1 – 22 May 2025
   **Authors:** Engineering & Product
   **Approved by:** CTO / Head of Product
+
   ***
+
   ## 1 Overview
+
   ChatNotes is a **progressive-web application (PWA)** that lets users capture notes through a chat interface, then organises them automatically into category documents (Tasks, Ideas, Journal, Meeting, Reading, Misc). An LLM chosen by the **user** classifies and summarises notes on demand. The stack uses React, Tailwind + shadcn/ui on the front-end, Supabase for auth & Postgres storage, and **Vercel** (static hosting + Edge Functions) for deployment. No realtime/WebSocket channels are required; the client relies on optimistic UI updates and periodic polling.
+
   ***
+
   ## 2 Architecture
+
   ```mermaid
   flowchart LR
       subgraph Front-end (PWA)
@@ -31,9 +41,13 @@
       db --> search[(pgvector + FTS)]
 
   ```
+
   _All traffic TLS 1.3; environment variables supply service keys._
+
   ***
+
   ## 3 Front-end (React + Vite)
+
   | Feature           | Details                                                                                                                               |
   | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
   | **UI Library**    | shadcn/ui components (Headless UI under Tailwind)                                                                                     |
@@ -43,18 +57,26 @@
   | **Search**        | Header search box (`Ctrl/⌘ K`) – client calls `/search` RPC.                                                                          |
   | **PWA**           | `manifest.json`, 192 / 512 px icons, `display: standalone`; custom “Add to Home Screen” banner.                                       |
   | **Accessibility** | WCAG 2.1 AA; `aria-live` alerts; full keyboard flow; `prefers-reduced-motion` respected.                                              |
+
   ***
+
   ## 4 Edge Functions
+
   | Route              | Auth     | Body                            | Response       | Behaviour                                                                                                                       |
   | ------------------ | -------- | ------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
   | **POST /classify** | User JWT | `{note_id, content, model_id?}` | `{category}`   | Fetch `model_id` from DB (fallback env); call LLM with strict prompt; update `notes.category_id` & `model_guess`; return label. |
   | **POST /summary**  | User JWT | `{category_id, model_id?}`      | `{summary_md}` | Retrieve all notes in category; send to LLM summariser; store in `summaries`; return markdown.                                  |
   | **POST /digest**   | User JWT | `{date?, model_id?}`            | `{digest_md}`  | Generate on-demand daily digest across categories for the given date (default today); no background cron.                       |
   | **POST /search**   | User JWT | `{query}`                       | `[note]`       | Hybrid SQL: full-text + semantic (pgvector) ranking ≤ 50 rows.                                                                  |
+
   LLM calls use OpenAI, Anthropic or any provider whose ID is passed in `model_id` (validated against allow-list).
+
   ***
+
   ## 5 Database (Supabase Postgres)
+
   ### 5.1 Schema
+
   ```sql
   create extension if not exists "uuid-ossp";
   create extension if not exists "pgvector";
@@ -102,7 +124,9 @@
   );
 
   ```
+
   ### 5.2 Indexes & RLS
+
   ```sql
   alter table notes enable row level security;
   create policy user_notes_pol on notes
@@ -112,8 +136,11 @@
   create index idx_notes_fts on notes using gin (to_tsvector('english', content));
 
   ```
+
   ***
+
   ## 6 Data flow – Note Creation
+
   ```mermaid
   sequenceDiagram
       participant UI as Chat UI
@@ -130,16 +157,22 @@
       UI-->UI: local cache update (no sockets)
 
   ```
+
   ***
+
   ## 7 Deployment & CI/CD
+
   | Stage                   | Action                                                                                        |
   | ----------------------- | --------------------------------------------------------------------------------------------- |
   | **CI (GitHub Actions)** | `pnpm lint` · `pnpm vitest` · build PWA (`pnpm build`)                                        |
   | **Preview**             | `vercel deploy --prebuilt` on every PR (preview URL)                                          |
   | **Prod**                | Merge ➜ `vercel deploy --prebuilt --prod` + `supabase db push`                                |
   | **Env vars**            | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `OPENAI_KEY`, `MODEL_LIST` etc. stored in Vercel Secrets |
+
   ***
+
   ## 8 Performance & Quality Targets
+
   | Layer        | Metric                         | Target               |
   | ------------ | ------------------------------ | -------------------- |
   | PWA          | Lighthouse PWA score           | ≥ 90                 |
@@ -147,7 +180,9 @@
   | `/classify`  | p95 latency                    | ≤ 800 ms             |
   | `/search`    | p95 latency                    | ≤ 400 ms             |
   | Error budget | FE Sentry < 1 % error sessions | monthly              |
+
   ***
+
   ## 9 Security & Compliance
   - TLS 1.3, HSTS
   - Supabase RLS on every table (`auth.uid()` match)
@@ -155,15 +190,21 @@
   - Secrets in Vercel; no keys in client bundle
   - GDPR / CCPA export & delete endpoints
   - Model allow-list to prevent arbitrary provider abuse
+
   ***
+
   ## 10 Open Items
+
   | #   | Topic                             | Owner   | Due  |
   | --- | --------------------------------- | ------- | ---- |
   | 1   | Undo-toast vs. Edit-only recovery | Design  | v1.1 |
   | 2   | Summary manual edit/versioning    | Product | v1.1 |
   | 3   | Mobile swipe actions library POC  | FE Lead | v1.1 |
+
   ***
+
   ## 11 Appendix A – Service-worker (Workbox snippet)
+
   ```
   import { precacheAndRoute, registerRoute } from 'workbox-precaching';
   import { NetworkFirst, CacheFirst } from 'workbox-strategies';

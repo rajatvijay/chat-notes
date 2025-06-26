@@ -37,17 +37,20 @@ jobs:
       - name: Run build test
         run: pnpm build
 
-      - name: Run accessibility tests
-        run: pnpm a11y
-        continue-on-error: true
+      - name: Start preview server and run accessibility tests
+        run: |
+          pnpm preview &
+          sleep 10
+          pnpm a11y
+          kill %1
 
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: success()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
-        continue-on-error: true
+      # - name: Upload coverage reports
+      #   uses: codecov/codecov-action@v4
+      #   if: success()
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: ./coverage/coverage-final.json
+      #   continue-on-error: true
 
   e2e:
     runs-on: ubuntu-latest

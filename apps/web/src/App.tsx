@@ -33,6 +33,7 @@ function App() {
                     <Link
                       to="/search"
                       className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      aria-label="Search"
                     >
                       <Search size={18} className="text-slate-600 dark:text-slate-400" />
                     </Link>

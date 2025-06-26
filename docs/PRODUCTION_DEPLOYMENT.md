@@ -1,3 +1,5 @@
+> TODO: Merge it inside Readme.md
+
 # 🚀 ChatNotes Production Deployment Guide
 
 Complete guide for deploying ChatNotes to production using GitHub Actions CI/CD.
