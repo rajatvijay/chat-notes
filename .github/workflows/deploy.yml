@@ -1,19 +1,21 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,11 +34,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run quality checks
-        run: |
-          pnpm lint
-          pnpm test
-          pnpm build
+      - name: Build application
+        run: pnpm build
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -44,12 +43,13 @@ jobs:
           version: latest
 
       - name: Deploy database migrations
-        run: |
-          echo "Deploying database migrations to production..."
-          echo "${{ secrets.SUPABASE_DB_PASSWORD }}" | supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-          supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          echo "Deploying database migrations to production..."
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          supabase db push
 
       - name: Deploy to Vercel
         id: deploy
@@ -73,12 +73,12 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"note_id":"test","content":"Buy groceries tomorrow"}' \
             -w "%{http_code}" || echo "000")
-          
+
           if [[ "$response" != *"200"* ]]; then
             echo "Classification endpoint test failed"
             exit 1
           fi
-          
+
           echo "All API tests passed"
 
       - name: Lighthouse performance check
