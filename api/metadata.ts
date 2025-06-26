@@ -87,21 +87,21 @@ export default async function handler(request: Request): Promise<Response> {
         }
       ], schema, 200, 'extract-metadata')
 
-      let metadata = {}
+      let metadata: Record<string, unknown> = {}
       
       try {
-        metadata = JSON.parse(openaiData.choices[0].message.content)
+        metadata = JSON.parse(openaiData.choices[0].message.content) as Record<string, unknown>
       } catch (e) {
         console.warn('Failed to parse metadata:', e)
       }
 
       // For reading content with links, enhance with title and summary
-      if (extractBody.category === 'reading' && (metadata as any).link) {
-        console.log('Reading content with link:', (metadata as any).link)
-        const enhancedResult = await enhanceReadingContent(extractBody.content, (metadata as any).link)
+      if (extractBody.category === 'reading' && typeof metadata.link === 'string') {
+        console.log('Reading content with link:', metadata.link)
+        const enhancedResult = await enhanceReadingContent(extractBody.content, metadata.link)
         if (enhancedResult) {
-          (metadata as any).title = enhancedResult.title;
-          (metadata as any).summary = enhancedResult.summary
+          metadata.title = enhancedResult.title
+          metadata.summary = enhancedResult.summary
         }
       }
 

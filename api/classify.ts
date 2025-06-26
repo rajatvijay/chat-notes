@@ -77,10 +77,18 @@ Only include cleaned_content for tasks when due dates are removed.`
         content: body.content
       }
     ], classificationSchema, 200, 'classify')
-    let result
+    let result: {
+      category: string
+      metadata?: Record<string, unknown>
+      cleaned_content?: string
+    }
 
     try {
-      result = JSON.parse(openaiData.choices[0].message.content)
+      result = JSON.parse(openaiData.choices[0].message.content) as {
+        category: string
+        metadata?: Record<string, unknown>
+        cleaned_content?: string
+      }
     } catch (e) {
       // Fallback to simple classification if JSON parsing fails
       const category = openaiData.choices[0].message.content
@@ -114,7 +122,7 @@ Only include cleaned_content for tasks when due dates are removed.`
     }
 
     // For reading content with links, fetch title and summary via LLM
-    if (finalCategory === 'reading' && metadata.link) {
+    if (finalCategory === 'reading' && typeof metadata.link === 'string') {
       console.log('Reading content with link:', metadata.link)
       const enhancedResult = await enhanceReadingContent(body.content, metadata.link)
       if (enhancedResult) {
