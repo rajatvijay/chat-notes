@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Grid,
   CheckSquare,
+  Smartphone,
 } from 'lucide-react'
 
 interface CostData {
@@ -199,6 +200,57 @@ export default function SettingsPage() {
                 ))
               )}
             </div>
+          </div>
+
+          {/* PWA Status */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Smartphone size={20} className="text-slate-600 dark:text-slate-400" />
+              <div>
+                <h2 className="font-medium text-slate-800 dark:text-slate-200">
+                  App Installation
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Progressive Web App status
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              <div className="flex justify-between">
+                <span>Installable</span>
+                <span className="text-green-600 dark:text-green-400">✓ Yes</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Installed</span>
+                <span className={
+                  typeof window !== 'undefined' && 
+                  (window.matchMedia('(display-mode: standalone)').matches || 
+                   (window.navigator as any).standalone === true)
+                    ? "text-green-600 dark:text-green-400" 
+                    : "text-slate-500 dark:text-slate-400"
+                }>
+                  {typeof window !== 'undefined' && 
+                   (window.matchMedia('(display-mode: standalone)').matches || 
+                    (window.navigator as any).standalone === true) ? "✓ Yes" : "✕ No"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Offline Ready</span>
+                <span className="text-green-600 dark:text-green-400">✓ Yes</span>
+              </div>
+            </div>
+            
+            {typeof window !== 'undefined' && 
+             !(window.matchMedia('(display-mode: standalone)').matches || 
+               (window.navigator as any).standalone === true) && (
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  💡 Add ChatNotes to your home screen for the best experience! 
+                  Look for the install prompt or use your browser's "Add to Home Screen" option.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* App Info */}

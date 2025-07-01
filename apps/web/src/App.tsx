@@ -27,8 +27,9 @@ function App() {
             <div className="h-screen flex flex-col bg-white dark:bg-slate-900">
               <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <Link to="/" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    Notes
+                  <Link to="/" className="flex items-center gap-2">
+                    <img src="/logo-optimized.png" alt="ChatNotes" className="w-8 h-8 object-contain" />
+                    <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">ChatNotes</span>
                   </Link>
                   <div className="flex items-center gap-2">
                     <Link
