@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import NotesList from '../components/NotesList'
 import TasksList from '../components/TasksList'
@@ -19,6 +19,7 @@ const categoryLabels: Record<string, string> = {
 
 export default function CategoryPage() {
   const { category } = useParams<{ category: string }>()
+  const navigate = useNavigate()
   const { notes, loading, error, refetch } = useCategoryNotes(category || '')
 
   const handleNoteDeleted = () => {
@@ -53,12 +54,12 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <header className="border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-3 p-4">
-          <Link
-            to="/categories"
+          <button
+            onClick={() => navigate(-1)}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ArrowLeft size={18} className="text-slate-600 dark:text-slate-400" />
-          </Link>
+          </button>
           <span className="text-xl">
             {category === 'task' ? '✅' : 
              category === 'idea' ? '💡' :

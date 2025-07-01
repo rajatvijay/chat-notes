@@ -30,14 +30,19 @@ export function registerServiceWorker() {
 }
 
 // Install prompt handling
-let deferredPrompt: any
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{outcome: 'accepted' | 'dismissed'}>
+}
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null
 
 export function setupInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault()
     // Stash the event so it can be triggered later
-    deferredPrompt = e
+    deferredPrompt = e as BeforeInstallPromptEvent
     
     // Show install button or banner
     showInstallPrompt()
@@ -133,7 +138,7 @@ function hideInstallPrompt() {
 // Check if app is running in standalone mode (installed)
 export function isInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone === true
+         ('standalone' in window.navigator && (window.navigator as {standalone?: boolean}).standalone === true)
 }
 
 // Setup offline indicator

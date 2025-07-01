@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import {
-  Settings,
   Palette,
   DollarSign,
   Info,
-  MessageCircle,
-  Grid,
-  CheckSquare,
   Smartphone,
 } from 'lucide-react'
 
@@ -70,20 +65,8 @@ export default function SettingsPage() {
   const daysCount = Math.max(costData.dailyBreakdown.length, 1)
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
-      <header className="border-b border-slate-200 dark:border-slate-700">
-        <div className="p-4">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-            Settings
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Customize your experience
-          </p>
-        </div>
-      </header>
-      
-      <div className="flex-1 p-4">
-        <div className="space-y-4">
+    <div className="h-full overflow-y-auto p-4">
+      <div className="space-y-4">
           {/* Categories Configuration */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-4">
@@ -226,13 +209,13 @@ export default function SettingsPage() {
                 <span className={
                   typeof window !== 'undefined' && 
                   (window.matchMedia('(display-mode: standalone)').matches || 
-                   (window.navigator as any).standalone === true)
+                   'standalone' in window.navigator && (window.navigator as {standalone?: boolean}).standalone === true)
                     ? "text-green-600 dark:text-green-400" 
                     : "text-slate-500 dark:text-slate-400"
                 }>
                   {typeof window !== 'undefined' && 
                    (window.matchMedia('(display-mode: standalone)').matches || 
-                    (window.navigator as any).standalone === true) ? "✓ Yes" : "✕ No"}
+                    'standalone' in window.navigator && (window.navigator as {standalone?: boolean}).standalone === true) ? "✓ Yes" : "✕ No"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -243,7 +226,7 @@ export default function SettingsPage() {
             
             {typeof window !== 'undefined' && 
              !(window.matchMedia('(display-mode: standalone)').matches || 
-               (window.navigator as any).standalone === true) && (
+               'standalone' in window.navigator && (window.navigator as {standalone?: boolean}).standalone === true) && (
               <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   💡 Add ChatNotes to your home screen for the best experience! 
@@ -282,44 +265,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
       </div>
-
-      <nav className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-        <div className="flex items-center justify-around px-4 py-2">
-          <Link
-            to="/"
-            className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <MessageCircle size={20} />
-            <span className="text-xs font-medium">Chat</span>
-          </Link>
-
-          <Link
-            to="/c/task"
-            className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <CheckSquare size={20} />
-            <span className="text-xs font-medium">Tasks</span>
-          </Link>
-
-          <Link
-            to="/categories"
-            className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <Grid size={20} />
-            <span className="text-xs font-medium">Notes</span>
-          </Link>
-
-          <Link
-            to="/settings"
-            className="flex flex-col items-center gap-1 py-2 px-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-          >
-            <Settings size={20} />
-            <span className="text-xs font-medium">Settings</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }
