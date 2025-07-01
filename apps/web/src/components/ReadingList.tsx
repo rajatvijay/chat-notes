@@ -112,7 +112,7 @@ export default function ReadingList({ notes }: ReadingListProps) {
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
                       {itemTitle}
                     </h3>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3">
+                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere">
                       {truncateText(note.content.replace(link || '', '').trim())}
                     </p>
                     <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export default function ReadingList({ notes }: ReadingListProps) {
                         <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
                           {itemTitle}
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3">
+                        <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere">
                           {truncateText(note.content)}
                         </p>
                         <div className="flex items-center justify-between">
@@ -197,7 +197,7 @@ export default function ReadingList({ notes }: ReadingListProps) {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border-l-4 border-purple-500">
-                        <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed italic">
+                        <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed italic break-words overflow-wrap-anywhere">
                           {selectedItem.content}
                         </p>
                       </div>

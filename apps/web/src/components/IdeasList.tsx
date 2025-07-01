@@ -119,7 +119,7 @@ export default function IdeasList({ notes, onNoteDeleted }: IdeasListProps) {
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
                       {ideaTitle}
                     </h3>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3">
+                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere">
                       {ideaSummary}
                     </p>
                     <div className="flex items-center justify-between">

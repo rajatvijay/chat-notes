@@ -171,7 +171,7 @@ export default function TasksList({ notes, onNoteDeleted }: TasksListProps) {
                       className="cursor-pointer"
                       onClick={() => setSelectedTask(note)}
                     >
-                      <p className={`text-slate-700 dark:text-slate-200 text-sm leading-relaxed mb-3 ${
+                      <p className={`text-slate-700 dark:text-slate-200 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere ${
                         taskCompleted ? 'line-through opacity-60' : ''
                       }`}>
                         {truncateText(getDisplayContent(note))}
@@ -230,7 +230,7 @@ export default function TasksList({ notes, onNoteDeleted }: TasksListProps) {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-                    <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed">
+                    <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed break-words overflow-wrap-anywhere">
                       {getDisplayContent(selectedTask)}
                     </p>
                   </div>

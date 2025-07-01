@@ -230,7 +230,7 @@ export default function ChatPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-lg mt-0.5">{getCategoryEmoji(note.category)}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed mb-2">
+                    <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere">
                       {note.content}
                     </p>
                     <div className="flex items-center justify-between mb-2">
