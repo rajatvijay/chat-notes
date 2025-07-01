@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import ChatPage from './pages/ChatPage'
 import TasksPage from './pages/TasksPage'
+import ReadingListPage from './pages/ReadingListPage'
 import CategoryPage from './pages/CategoryPage'
 import CategoriesPage from './pages/CategoriesPage'
 import SearchPage from './pages/SearchPage'
@@ -24,6 +25,14 @@ function App() {
           element={
             <AppLayout>
               <TasksPage />
+            </AppLayout>
+          }
+        />
+        <Route
+          path="/reading"
+          element={
+            <AppLayout>
+              <ReadingListPage />
             </AppLayout>
           }
         />

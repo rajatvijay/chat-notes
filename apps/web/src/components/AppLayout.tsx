@@ -7,6 +7,7 @@ import {
   Grid,
   Settings,
   CheckSquare,
+  BookOpen,
 } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 
@@ -22,6 +23,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true
     if (path === '/tasks' && location.pathname === '/tasks') return true
+    if (path === '/reading' && location.pathname === '/reading') return true
     if (path === '/categories' && location.pathname === '/categories') return true
     if (path === '/settings' && location.pathname === '/settings') return true
     return false
@@ -68,49 +70,61 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
         <div className="flex items-center justify-around px-4 py-2">
           <Link
             to="/"
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg ${
+            className={`flex flex-col items-center gap-1 py-2 px-2 rounded-lg ${
               isActive('/') 
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <MessageCircle size={20} />
+            <MessageCircle size={18} />
             <span className="text-xs font-medium">Chat</span>
           </Link>
 
           <Link
             to="/tasks"
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg ${
+            className={`flex flex-col items-center gap-1 py-2 px-2 rounded-lg ${
               isActive('/tasks')
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <CheckSquare size={20} />
+            <CheckSquare size={18} />
             <span className="text-xs font-medium">Tasks</span>
           </Link>
 
           <Link
+            to="/reading"
+            className={`flex flex-col items-center gap-1 py-2 px-2 rounded-lg ${
+              isActive('/reading')
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <BookOpen size={18} />
+            <span className="text-xs font-medium">Reading</span>
+          </Link>
+
+          <Link
             to="/categories"
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg ${
+            className={`flex flex-col items-center gap-1 py-2 px-2 rounded-lg ${
               isActive('/categories')
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Grid size={20} />
+            <Grid size={18} />
             <span className="text-xs font-medium">Notes</span>
           </Link>
 
           <Link
             to="/settings"
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg ${
+            className={`flex flex-col items-center gap-1 py-2 px-2 rounded-lg ${
               isActive('/settings')
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Settings size={20} />
+            <Settings size={18} />
             <span className="text-xs font-medium">Settings</span>
           </Link>
         </div>

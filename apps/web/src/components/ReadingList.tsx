@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ExternalLink, Quote } from 'lucide-react'
+import { ExternalLink, Quote, Check, CircleDot, Filter } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,15 +20,50 @@ interface Note {
     excerpt?: boolean
     book_title?: string
     author?: string
+    read?: boolean
   }
 }
 
 interface ReadingListProps {
   notes: Note[]
+  onNoteDeleted?: () => void
 }
 
-export default function ReadingList({ notes }: ReadingListProps) {
+export default function ReadingList({ notes, onNoteDeleted }: ReadingListProps) {
   const [selectedItem, setSelectedItem] = useState<Note | null>(null)
+  const [updatingReadStatus, setUpdatingReadStatus] = useState<string | null>(null)
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+
+  const toggleReadStatus = async (noteId: string, currentReadStatus: boolean) => {
+    setUpdatingReadStatus(noteId)
+    
+    try {
+      const response = await fetch('/api/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update_metadata',
+          note_id: noteId,
+          metadata: {
+            read: !currentReadStatus
+          }
+        }),
+      })
+
+      if (response.ok) {
+        // Trigger a refetch of notes
+        onNoteDeleted?.()
+      } else {
+        console.error('Failed to update read status')
+      }
+    } catch (error) {
+      console.error('Error updating read status:', error)
+    } finally {
+      setUpdatingReadStatus(null)
+    }
+  }
 
   if (notes.length === 0) {
     return (
@@ -88,50 +123,121 @@ export default function ReadingList({ notes }: ReadingListProps) {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  // Filter notes based on read status
+  const filteredNotes = showUnreadOnly 
+    ? notes.filter(note => !note.metadata?.read)
+    : notes
+
+  const unreadCount = notes.filter(note => !note.metadata?.read).length
+
   return (
-    <div className="space-y-3">
-      {notes.map((note) => {
+    <div className="space-y-4">
+      {/* Filter Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+            Reading List
+          </h2>
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            ({filteredNotes.length} {showUnreadOnly ? 'unread' : 'items'})
+          </span>
+        </div>
+        <button
+          onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            showUnreadOnly
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+          }`}
+        >
+          <Filter size={14} />
+          {showUnreadOnly ? 'Show All' : `Unread (${unreadCount})`}
+        </button>
+      </div>
+
+      <div className="space-y-2">
+      {filteredNotes.length === 0 && showUnreadOnly ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 flex items-center justify-center mb-3">
+            <span className="text-xl">📖</span>
+          </div>
+          <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            No unread items
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            All reading items are marked as read
+          </p>
+        </div>
+      ) : (
+        filteredNotes.map((note) => {
         const itemType = getItemType(note)
         const itemTitle = getItemTitle(note)
         const link = note.metadata?.link || extractLinkFromContent(note.content)
         const isLink = itemType === 'link'
+        const isRead = note.metadata?.read || false
+        const isUpdating = updatingReadStatus === note.id
 
         return (
-          <div key={note.id}>
+          <div key={note.id} className={`relative ${isRead ? 'opacity-75' : ''}`}>
             {isLink ? (
-              // Link item - clickable to open link
-              <div
-                className="group cursor-pointer bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all"
-                onClick={() => link && handleLinkClick(link)}
-              >
+              // Link item
+              <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-xl p-3 shadow-sm transition-all">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-violet-500/10 flex items-center justify-center shrink-0">
-                    <ExternalLink size={18} className="text-purple-600 dark:text-purple-400" />
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-violet-500/10 flex items-center justify-center shrink-0">
+                    <ExternalLink size={14} className="text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
-                      {itemTitle}
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere">
-                      {truncateText(note.content.replace(link || '', '').trim())}
-                    </p>
+                    <div 
+                      className="cursor-pointer group"
+                      onClick={() => link && handleLinkClick(link)}
+                    >
+                      <h3 className="font-medium text-slate-800 dark:text-slate-200 mb-1 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors text-sm">
+                        {itemTitle}
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-2 break-words overflow-wrap-anywhere">
+                        {truncateText(note.content.replace(link || '', '').trim(), 80)}
+                      </p>
+                    </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                          🔗 Link
+                          🔗
                         </span>
                         {note.metadata?.author && (
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
-                            by {note.metadata.author}
+                          <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-20">
+                            {note.metadata.author}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                        {new Date(note.created_at).toLocaleDateString([], {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                          {new Date(note.created_at).toLocaleDateString([], {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleReadStatus(note.id, isRead)
+                          }}
+                          disabled={isUpdating}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isRead 
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={isRead ? 'Mark as unread' : 'Mark as read'}
+                        >
+                          {isUpdating ? (
+                            <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
+                          ) : isRead ? (
+                            <Check size={14} />
+                          ) : (
+                            <CircleDot size={14} />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -140,38 +246,63 @@ export default function ReadingList({ notes }: ReadingListProps) {
               // Excerpt item - opens dialog
               <Dialog onOpenChange={(open) => !open && setSelectedItem(null)}>
                 <DialogTrigger asChild>
-                  <div
-                    className="group cursor-pointer bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all"
-                    onClick={() => setSelectedItem(note)}
-                  >
+                  <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-xl p-3 shadow-sm transition-all">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-violet-500/10 flex items-center justify-center shrink-0">
-                        <Quote size={18} className="text-purple-600 dark:text-purple-400" />
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-violet-500/10 flex items-center justify-center shrink-0">
+                        <Quote size={14} className="text-purple-600 dark:text-purple-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
-                          {itemTitle}
-                        </h3>
-                        <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 break-words overflow-wrap-anywhere">
-                          {truncateText(note.content)}
-                        </p>
+                        <div 
+                          className="cursor-pointer group"
+                          onClick={() => setSelectedItem(note)}
+                        >
+                          <h3 className="font-medium text-slate-800 dark:text-slate-200 mb-1 text-sm">
+                            {itemTitle}
+                          </h3>
+                          <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-2 break-words overflow-wrap-anywhere">
+                            {truncateText(note.content, 80)}
+                          </p>
+                        </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                              📖 Excerpt
+                              📖
                             </span>
                             {note.metadata?.author && (
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
-                                by {note.metadata.author}
+                              <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-20">
+                                {note.metadata.author}
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                            {new Date(note.created_at).toLocaleDateString([], {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                              {new Date(note.created_at).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleReadStatus(note.id, isRead)
+                              }}
+                              disabled={isUpdating}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isRead 
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              title={isRead ? 'Mark as unread' : 'Mark as read'}
+                            >
+                              {isUpdating ? (
+                                <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
+                              ) : isRead ? (
+                                <Check size={14} />
+                              ) : (
+                                <CircleDot size={14} />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -230,7 +361,8 @@ export default function ReadingList({ notes }: ReadingListProps) {
             )}
           </div>
         )
-      })}
+      }))}
+      </div>
     </div>
   )
 }

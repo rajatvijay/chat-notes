@@ -45,7 +45,13 @@ interface SoftDeleteRequest {
   note_id: string
 }
 
-type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest | SoftDeleteRequest
+interface UpdateMetadataFieldRequest {
+  action: 'update_metadata'
+  note_id: string
+  metadata: Record<string, unknown>
+}
+
+type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest | SoftDeleteRequest | UpdateMetadataFieldRequest
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -287,6 +293,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       return res.status(200).json({ success: true })
+
+    } else if (body.action === 'update_metadata') {
+      const updateMetadataBody = body as UpdateMetadataFieldRequest
+      
+      if (!updateMetadataBody.note_id) {
+        return res.status(400).json({ error: 'Missing note_id' })
+      }
+
+      if (!updateMetadataBody.metadata || typeof updateMetadataBody.metadata !== 'object') {
+        return res.status(400).json({ error: 'Missing or invalid metadata' })
+      }
+
+      const supabase = getSupabaseClient()
+
+      // Get current metadata to merge with new fields
+      const { data: currentNote, error: fetchError } = await supabase
+        .from('notes')
+        .select('metadata')
+        .eq('id', updateMetadataBody.note_id)
+        .is('deleted_at', null)
+        .single()
+
+      if (fetchError) {
+        throw fetchError
+      }
+
+      const updatedMetadata = {
+        ...currentNote.metadata,
+        ...updateMetadataBody.metadata
+      }
+
+      // Update the note's metadata
+      const { error } = await supabase
+        .from('notes')
+        .update({ metadata: updatedMetadata })
+        .eq('id', updateMetadataBody.note_id)
+
+      if (error) {
+        console.error('Database update error:', error)
+        throw new Error('Database update error')
+      }
+
+      return res.status(200).json({ 
+        success: true
+      })
 
     } else {
       return res.status(400).json({ error: 'Invalid action' })
