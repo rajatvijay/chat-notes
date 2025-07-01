@@ -19,7 +19,11 @@ const categoryLabels: Record<string, string> = {
 
 export default function CategoryPage() {
   const { category } = useParams<{ category: string }>()
-  const { notes, loading, error } = useCategoryNotes(category || '')
+  const { notes, loading, error, refetch } = useCategoryNotes(category || '')
+
+  const handleNoteDeleted = () => {
+    refetch()
+  }
 
   if (!category || !categoryLabels[category]) {
     return (
@@ -74,8 +78,8 @@ export default function CategoryPage() {
       </header>
       
       <div className="p-4">
-        {category === 'task' && <TasksList notes={notes} />}
-        {category === 'idea' && <IdeasList notes={notes} />}
+        {category === 'task' && <TasksList notes={notes} onNoteDeleted={handleNoteDeleted} />}
+        {category === 'idea' && <IdeasList notes={notes} onNoteDeleted={handleNoteDeleted} />}
         {category === 'journal' && <JournalList notes={notes} />}
         {category === 'meeting' && <MeetingsList notes={notes} />}
         {category === 'reading' && <ReadingList notes={notes} />}

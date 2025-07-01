@@ -14,6 +14,7 @@ export function useCategoryNotes(category: string) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     if (!category) return
@@ -27,6 +28,7 @@ export function useCategoryNotes(category: string) {
           .from('notes')
           .select('*')
           .eq('category', category)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -39,7 +41,11 @@ export function useCategoryNotes(category: string) {
     }
 
     fetchNotes()
-  }, [category])
+  }, [category, refreshTrigger])
 
-  return { notes, loading, error }
+  const refetch = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
+  return { notes, loading, error, refetch }
 }

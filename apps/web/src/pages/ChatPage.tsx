@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { MessageCircle, Edit2, Save, Calendar, Clock, Link, User, Hash } from 'lucide-react'
+import { MessageCircle, Edit2, Save, Calendar, Clock, Link, User, Hash, Trash2 } from 'lucide-react'
 import Composer from '../components/Composer'
 import { supabase } from '../lib/supabase'
+import { useNoteOperations } from '../hooks/useNoteOperations'
 
 interface Note {
   id: string
@@ -19,6 +20,7 @@ export default function ChatPage() {
   const [changingType, setChangingType] = useState<string | null>(null)
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [editingMetadata, setEditingMetadata] = useState<Record<string, unknown>>({})
+  const { deleteNote, isDeleting } = useNoteOperations()
 
   useEffect(() => {
     fetchRecentNotes()
@@ -29,6 +31,7 @@ export default function ChatPage() {
       const { data, error } = await supabase
         .from('notes')
         .select('id, content, category, created_at, source, metadata')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -160,6 +163,31 @@ export default function ChatPage() {
     setEditingMetadata({})
   }
 
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this note?')) {
+      return
+    }
+    
+    // Store original note for rollback
+    const originalNote = notes.find(note => note.id === noteId)
+    
+    await deleteNote(
+      noteId,
+      // Optimistic update: immediately remove from local state
+      () => {
+        setNotes(prev => prev.filter(note => note.id !== noteId))
+      },
+      // Rollback: restore the note if delete fails
+      () => {
+        if (originalNote) {
+          setNotes(prev => [...prev, originalNote].sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          ))
+        }
+      }
+    )
+  }
+
 
   if (loading) {
     return (
@@ -196,7 +224,9 @@ export default function ChatPage() {
         ) : (
           <div className="space-y-3">
             {notes.map((note) => (
-              <div key={note.id} className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+              <div key={note.id} className={`bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 transition-all duration-300 ${
+                isDeleting(note.id) ? 'opacity-0 scale-95 translate-x-4' : 'opacity-100 scale-100 translate-x-0'
+              }`}>
                 <div className="flex items-start gap-3">
                   <span className="text-lg mt-0.5">{getCategoryEmoji(note.category)}</span>
                   <div className="flex-1 min-w-0">
@@ -234,6 +264,13 @@ export default function ChatPage() {
                             <Edit2 size={12} />
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          title="Delete note"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                         <span className="text-xs text-slate-600 dark:text-slate-400">
                           {new Date(note.created_at).toLocaleTimeString([], { 
                             hour: '2-digit', 

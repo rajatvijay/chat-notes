@@ -28,6 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('notes')
       .select('id, content, category, created_at')
       .ilike('content', `%${body.query.trim()}%`)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(50) // Limit results to prevent overwhelming UI
 

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Clock, Check } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Clock, Check, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from '@chatnotes/ui'
 import { useTaskCompletions } from '../hooks/useTaskCompletions'
 import { useTaskOperations } from '../hooks/useTaskOperations'
+import { useNoteOperations } from '../hooks/useNoteOperations'
 import DueDatePicker from './DueDatePicker'
 
 interface Note {
@@ -26,15 +27,23 @@ interface Note {
 
 interface TasksListProps {
   notes: Note[]
+  onNoteDeleted?: () => void
 }
 
-export default function TasksList({ notes }: TasksListProps) {
+export default function TasksList({ notes, onNoteDeleted }: TasksListProps) {
   const [selectedTask, setSelectedTask] = useState<Note | null>(null)
-  const noteIds = useMemo(() => notes.map(note => note.id), [notes])
+  const [localNotes, setLocalNotes] = useState<Note[]>(notes)
+  const noteIds = useMemo(() => localNotes.map(note => note.id), [localNotes])
   const { toggleCompletion, isCompleted } = useTaskCompletions(noteIds)
   const { toggleTaskCompletion, setTaskDueDate } = useTaskOperations()
+  const { deleteNote, isDeleting } = useNoteOperations()
 
-  if (notes.length === 0) {
+  // Update local notes when props change
+  React.useEffect(() => {
+    setLocalNotes(notes)
+  }, [notes])
+
+  if (localNotes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
@@ -74,6 +83,39 @@ export default function TasksList({ notes }: TasksListProps) {
     return success
   }
 
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) {
+      return
+    }
+    
+    // Store original note for rollback
+    const originalNote = localNotes.find(note => note.id === noteId)
+    
+    const success = await deleteNote(
+      noteId,
+      // Optimistic update: immediately remove from local state
+      () => {
+        setLocalNotes(prev => prev.filter(note => note.id !== noteId))
+      },
+      // Rollback: restore the note if delete fails
+      () => {
+        if (originalNote) {
+          setLocalNotes(prev => [...prev, originalNote].sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          ))
+        }
+      }
+    )
+    
+    // Only call onNoteDeleted if successful (for parent component refresh)
+    if (success && onNoteDeleted) {
+      // Small delay to allow animation to complete
+      setTimeout(() => {
+        onNoteDeleted()
+      }, 300)
+    }
+  }
+
   const truncateText = (text: string, length: number = 80) => {
     return text.length > length ? text.substring(0, length) + '...' : text
   }
@@ -99,7 +141,7 @@ export default function TasksList({ notes }: TasksListProps) {
 
   return (
     <div className="space-y-3">
-      {notes.map((note) => {
+      {localNotes.map((note) => {
         const taskCompleted = isCompleted(note.id)
         const dueDate = formatDueDate(note.metadata?.due_date)
         
@@ -108,7 +150,9 @@ export default function TasksList({ notes }: TasksListProps) {
             key={note.id}
             onOpenChange={(open) => !open && setSelectedTask(null)}
           >
-            <div className="group bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm">
+            <div className={`group bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-white/20 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm transition-all duration-300 ${
+              isDeleting(note.id) ? 'opacity-0 scale-95 translate-x-4' : 'opacity-100 scale-100 translate-x-0'
+            }`}>
               <div className="flex items-start gap-3">
                 <button
                   onClick={() => handleToggleComplete(note.id)}
@@ -149,12 +193,24 @@ export default function TasksList({ notes }: TasksListProps) {
                         onDueDateSet={handleSetDueDate}
                       />
                     </div>
-                    <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                      {new Date(note.created_at).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                        {new Date(note.created_at).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteNote(note.id)
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                        title="Delete task"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

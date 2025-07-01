@@ -40,7 +40,12 @@ interface TaskDueDateRequest {
   due_date: string
 }
 
-type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest
+interface SoftDeleteRequest {
+  action: 'soft_delete'
+  note_id: string
+}
+
+type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest | SoftDeleteRequest
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -158,6 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('notes')
           .select('metadata')
           .eq('id', noteId)
+          .is('deleted_at', null)
           .single()
 
         if (fetchError) {
@@ -236,6 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('notes')
         .select('metadata')
         .eq('id', dueDateBody.note_id)
+        .is('deleted_at', null)
         .single()
 
       if (fetchError) {
@@ -254,6 +261,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         throw error
+      }
+
+      return res.status(200).json({ success: true })
+
+    } else if (body.action === 'soft_delete') {
+      const deleteBody = body as SoftDeleteRequest
+      
+      if (!deleteBody.note_id) {
+        return res.status(400).json({ error: 'Missing note_id' })
+      }
+
+      const supabase = getSupabaseClient()
+
+      // Soft delete the note by setting deleted_at timestamp
+      const { error } = await supabase
+        .from('notes')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', deleteBody.note_id)
+        .is('deleted_at', null) // Only delete if not already deleted
+
+      if (error) {
+        console.error('Soft delete error:', error)
+        throw new Error('Soft delete error')
       }
 
       return res.status(200).json({ success: true })
