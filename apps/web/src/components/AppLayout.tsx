@@ -30,9 +30,9 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-slate-900">
+    <div className="h-dvh flex flex-col bg-white dark:bg-slate-900">
       {showHeader && (
-        <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
           <div className="flex items-center justify-between px-4 py-3">
             <Link to="/" className="flex items-center gap-2">
               <img src="/logo-optimized.png" alt="ChatNotes" className="w-8 h-8 object-contain" />
@@ -66,7 +66,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
         {children}
       </main>
 
-      <nav className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+      <nav className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0 sticky bottom-0 z-50">
         <div className="flex items-center justify-around px-4 py-2">
           <Link
             to="/"

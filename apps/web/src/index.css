@@ -71,4 +71,15 @@
       transform: translateY(0);
     }
   }
+
+  /* Mobile viewport height fixes */
+  .h-dvh {
+    height: 100vh; /* fallback for browsers that don't support dvh */
+    height: 100dvh;
+  }
+
+  .min-h-dvh {
+    min-height: 100vh; /* fallback for browsers that don't support dvh */
+    min-height: 100dvh;
+  }
 }
