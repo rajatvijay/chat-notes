@@ -55,6 +55,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    height: 100vh; /* fallback for browsers that don't support dvh */
+    height: 100dvh;
   }
 }
 
