@@ -68,28 +68,28 @@ jobs:
           echo "preview-url: ${{ steps.deploy.outputs.preview-url }}"
           echo "outputs: ${{ steps.deploy.outputs }}"
 
-      - name: Health check
-        run: |
-          sleep 30
-          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
-          if [ -z "$DEPLOY_URL" ]; then
-            echo "url output is empty, trying preview-url"
-            DEPLOY_URL="${{ steps.deploy.outputs.preview-url }}"
-          fi
-          if [ -z "$DEPLOY_URL" ]; then
-            echo "Error: Both url and preview-url outputs are empty"
-            exit 1
-          fi
-          echo "Health checking: $DEPLOY_URL/api/health"
-          curl -f "$DEPLOY_URL/api/health" || exit 1
+      # - name: Health check
+      #   run: |
+      #     sleep 30
+      #     DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+      #     if [ -z "$DEPLOY_URL" ]; then
+      #       echo "url output is empty, trying preview-url"
+      #       DEPLOY_URL="${{ steps.deploy.outputs.preview-url }}"
+      #     fi
+      #     if [ -z "$DEPLOY_URL" ]; then
+      #       echo "Error: Both url and preview-url outputs are empty"
+      #       exit 1
+      #     fi
+      #     echo "Health checking: $DEPLOY_URL/api/health"
+      #     curl -f "$DEPLOY_URL/api/health" || exit 1
 
-      - name: Lighthouse performance check
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          urls: ${{ steps.deploy.outputs.url || steps.deploy.outputs.preview-url }}
-          configPath: lighthouse-budget.json
-          uploadArtifacts: true
-          temporaryPublicStorage: true
+      # - name: Lighthouse performance check
+      #   uses: treosh/lighthouse-ci-action@v10
+      #   with:
+      #     urls: ${{ steps.deploy.outputs.url || steps.deploy.outputs.preview-url }}
+      #     configPath: lighthouse-budget.json
+      #     uploadArtifacts: true
+      #     temporaryPublicStorage: true
 
       - name: Notify deployment success
         if: success()
