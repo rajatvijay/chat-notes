@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chatnotes-v1'
+const CACHE_NAME = 'chatnotes-v2.1'
 const urlsToCache = [
   '/',
   '/manifest.json',
