@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Loader } from 'lucide-react'
+import AuthLoader from '../components/AuthLoader'
 
 export default function SignInPage() {
   const { user, signInWithGoogle, loading: authLoading } = useAuth()
@@ -9,7 +10,7 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Redirect if already authenticated
-  if (user && !authLoading) {
+  if (user) {
     return <Navigate to="/" replace />
   }
 
@@ -29,20 +30,13 @@ export default function SignInPage() {
   }
 
   if (authLoading) {
-    return (
-      <div className="min-h-dvh bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Loader className="w-6 h-6 animate-spin text-blue-600" />
-          <span className="text-slate-600 dark:text-slate-400">Loading...</span>
-        </div>
-      </div>
-    )
+    return <AuthLoader message="Checking authentication..." showLogo={true} />
   }
 
   return (
     <div className="min-h-dvh bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/30 p-8">
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/30 p-8">
           {/* Logo and Title */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
