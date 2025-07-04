@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { classificationSchema } from './shared/schemas.js'
 import { callOpenAI, enhanceReadingContent } from './shared/openai-utils.js'
 import { updateNoteMetadata, validCategories } from './shared/supabase-utils.js'
+import { withAuth, SecurityContext } from './shared/middleware.js'
 
 interface ClassifyRequest {
   note_id: string
@@ -9,16 +10,19 @@ interface ClassifyRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  return withAuth(req, res, async (req, res, context: SecurityContext) => {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
 
-  try {
     const body: ClassifyRequest = req.body
 
     if (!body.note_id || !body.content) {
       return res.status(400).json({ error: 'Missing note_id or content' })
     }
+
+    // Log the classification attempt for audit purposes
+    console.log(`[CLASSIFY] User ${context.user.email} requesting classification for note ${body.note_id}`)
 
     // Check if OpenAI API key is available
     if (!process.env.OPENAI_KEY) {
@@ -147,19 +151,9 @@ Only include cleaned_content for tasks when due dates are removed.`
       // Continue with the response even if database update fails
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       category: finalCategory,
       metadata: metadata,
     })
-  } catch (error) {
-    console.error('Classification error:', error)
-    
-    // Return a fallback response instead of 500 error
-    const fallbackResult = {
-      category: 'misc' as const,
-      metadata: {}
-    }
-    
-    return res.status(200).json(fallbackResult)
-  }
+  })
 }

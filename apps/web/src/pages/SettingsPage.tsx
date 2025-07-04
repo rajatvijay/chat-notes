@@ -5,6 +5,7 @@ import {
   Info,
   Smartphone,
 } from 'lucide-react'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface CostData {
   totalCost: number
@@ -33,11 +34,12 @@ export default function SettingsPage() {
     dailyBreakdown: []
   })
   const [isLoadingCosts, setIsLoadingCosts] = useState(true)
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   useEffect(() => {
     async function fetchCostData() {
       try {
-        const response = await fetch('/api/llm-costs')
+        const response = await authenticatedFetch('/api/llm-costs')
         if (response.ok) {
           const data: CostData = await response.json()
           setCostData(data)
@@ -52,7 +54,7 @@ export default function SettingsPage() {
     }
 
     fetchCostData()
-  }, [])
+  }, [authenticatedFetch])
 
   const toggleCategory = (id: string) => {
     setCategories((prev) =>

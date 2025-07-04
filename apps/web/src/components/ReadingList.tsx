@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@chatnotes/ui'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface Note {
   id: string
@@ -33,16 +34,14 @@ export default function ReadingList({ notes, onNoteDeleted }: ReadingListProps) 
   const [selectedItem, setSelectedItem] = useState<Note | null>(null)
   const [updatingReadStatus, setUpdatingReadStatus] = useState<string | null>(null)
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   const toggleReadStatus = async (noteId: string, currentReadStatus: boolean) => {
     setUpdatingReadStatus(noteId)
     
     try {
-      const response = await fetch('/api/metadata', {
+      const response = await authenticatedFetch('/api/metadata', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: 'update_metadata',
           note_id: noteId,

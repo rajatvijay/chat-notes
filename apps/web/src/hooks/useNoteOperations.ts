@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useAuthenticatedFetch } from './useAuthenticatedFetch'
 
 export function useNoteOperations() {
   const [loading, setLoading] = useState(false)
   const [deletingNotes, setDeletingNotes] = useState<Set<string>>(new Set())
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   const deleteNote = async (
     noteId: string, 
@@ -18,11 +20,8 @@ export function useNoteOperations() {
     }
 
     try {
-      const response = await fetch('/api/metadata', {
+      const response = await authenticatedFetch('/api/metadata', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: 'soft_delete',
           note_id: noteId,

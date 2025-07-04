@@ -84,4 +84,9 @@
     min-height: 100vh; /* fallback for browsers that don't support dvh */
     min-height: 100dvh;
   }
+
+  /* iPhone safe area support */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

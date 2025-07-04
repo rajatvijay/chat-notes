@@ -3,10 +3,42 @@ import { calculateAndLogCost } from './cost-tracking.js'
 
 const OPENAI_API_KEY = process.env.OPENAI_KEY
 
+// Security limits
+const MAX_INPUT_LENGTH = 50000 // 50KB
+const MAX_TOKENS = 4000 // Reasonable limit to prevent abuse
+const REQUEST_TIMEOUT = 30000 // 30 seconds
+
 export async function callOpenAI(messages: Array<{role: string, content: string}>, schema?: unknown, maxTokens = 200, endpoint = 'unknown') {
+  // Validate OpenAI API key
+  if (!OPENAI_API_KEY || !OPENAI_API_KEY.startsWith('sk-')) {
+    throw new Error('Invalid or missing OpenAI API key')
+  }
+
+  // Validate input parameters
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw new Error('Invalid messages array')
+  }
+
+  // Validate token limit
+  if (maxTokens > MAX_TOKENS) {
+    console.warn(`Requested token limit ${maxTokens} exceeds maximum ${MAX_TOKENS}, capping to maximum`)
+    maxTokens = MAX_TOKENS
+  }
+
+  // Check total input length to prevent excessive costs
+  const totalInputLength = messages.reduce((sum, msg) => sum + (msg.content?.length || 0), 0)
+  if (totalInputLength > MAX_INPUT_LENGTH) {
+    throw new Error(`Input too large: ${totalInputLength} characters (max: ${MAX_INPUT_LENGTH})`)
+  }
+
+  // Sanitize messages to prevent injection
+  const sanitizedMessages = messages.map(msg => ({
+    role: msg.role,
+    content: sanitizeContent(msg.content)
+  }))
   const requestBody: Record<string, unknown> = {
     model: 'gpt-4o',
-    messages,
+    messages: sanitizedMessages,
     max_tokens: maxTokens,
     temperature: 0
   }
@@ -21,27 +53,82 @@ export async function callOpenAI(messages: Array<{role: string, content: string}
     }
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody)
-  })
+  // Create AbortController for request timeout
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
-  if (!response.ok) {
-    throw new Error('OpenAI API error')
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      console.error(`OpenAI API error: ${response.status} ${response.statusText}`)
+      
+      // Don't expose API error details to prevent information leakage
+      if (response.status === 401) {
+        throw new Error('OpenAI authentication failed')
+      } else if (response.status === 429) {
+        throw new Error('OpenAI rate limit exceeded')
+      } else if (response.status >= 500) {
+        throw new Error('OpenAI service unavailable')
+      } else {
+        throw new Error('OpenAI API request failed')
+      }
+    }
+
+    const result = await response.json()
+    
+    // Log cost for this API call (with sanitized data)
+    const inputText = sanitizedMessages.map(m => m.content).join(' ')
+    const outputText = result.choices?.[0]?.message?.content || ''
+    calculateAndLogCost(endpoint, inputText, outputText)
+    
+    return result
+  } catch (error) {
+    clearTimeout(timeoutId)
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('OpenAI request timeout')
+    }
+    
+    throw error
+  }
+}
+
+/**
+ * Sanitize content to prevent injection attacks and excessive data
+ */
+function sanitizeContent(content: string): string {
+  if (!content || typeof content !== 'string') {
+    return ''
   }
 
-  const result = await response.json()
-  
-  // Log cost for this API call
-  const inputText = messages.map(m => m.content).join(' ')
-  const outputText = result.choices?.[0]?.message?.content || ''
-  calculateAndLogCost(endpoint, inputText, outputText)
-  
-  return result
+  // Truncate excessively long content
+  let sanitized = content.slice(0, MAX_INPUT_LENGTH)
+
+  // Remove potentially dangerous content
+  sanitized = sanitized
+    .replace(/<script[^>]*>.*?<\/script>/gi, '[script removed]')
+    .replace(/javascript:/gi, '[javascript removed]')
+    .replace(/data:text\/html/gi, '[data url removed]')
+    .replace(/on\w+\s*=/gi, '[event handler removed]')
+
+  // Remove excessive whitespace and control characters
+  sanitized = sanitized
+    .replace(/\s+/g, ' ')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x84\x86-\x9F]/g, '')
+    .trim()
+
+  return sanitized
 }
 
 export async function enhanceReadingContent(content: string, link: string) {

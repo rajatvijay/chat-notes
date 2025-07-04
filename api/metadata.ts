@@ -3,6 +3,7 @@ import { metadataSchemas } from './shared/schemas.js'
 import { callOpenAI, enhanceReadingContent, buildCategoryPrompt } from './shared/openai-utils.js'
 import { updateNoteMetadata, getSupabaseClient } from './shared/supabase-utils.js'
 import { createClient } from '@supabase/supabase-js'
+import { withAuth, SecurityContext } from './shared/middleware.js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -54,11 +55,11 @@ interface UpdateMetadataFieldRequest {
 type MetadataRequest = ExtractMetadataRequest | UpdateMetadataRequest | UpdateMeetingRequest | TaskCompletionRequest | TaskDueDateRequest | SoftDeleteRequest | UpdateMetadataFieldRequest
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  return withAuth(req, res, async (req, res, _context: SecurityContext) => {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
 
-  try {
     const body: MetadataRequest = req.body
     
     if (!body.action) {
@@ -343,8 +344,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid action' })
     }
 
-  } catch (error) {
-    console.error('Metadata operation error:', error)
-    return res.status(500).json({ error: 'Internal server error' })
-  }
+  })
 }

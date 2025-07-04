@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, ArrowLeft } from 'lucide-react'
 import { useDebounce } from '../hooks/useDebounce'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface SearchResult {
   id: string
@@ -17,6 +18,7 @@ export default function SearchPage() {
   const debouncedQuery = useDebounce(query, 300)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   // Get initial query from URL params
   useEffect(() => {
@@ -36,9 +38,8 @@ export default function SearchPage() {
     const performSearch = async () => {
       setLoading(true)
       try {
-        const response = await fetch('/api/search', {
+        const response = await authenticatedFetch('/api/search', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: debouncedQuery })
         })
         
@@ -54,7 +55,7 @@ export default function SearchPage() {
     }
 
     performSearch()
-  }, [debouncedQuery])
+  }, [debouncedQuery, authenticatedFetch])
 
   const getCategoryEmoji = (category: string) => {
     switch (category) {

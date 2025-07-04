@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useDebounce } from '../hooks/useDebounce'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface SearchResult {
   id: string
@@ -19,6 +20,7 @@ export default function SearchBar() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   // Search function
   useEffect(() => {
@@ -30,9 +32,8 @@ export default function SearchBar() {
     const performSearch = async () => {
       setLoading(true)
       try {
-        const response = await fetch('/api/search', {
+        const response = await authenticatedFetch('/api/search', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: debouncedQuery })
         })
         
@@ -48,7 +49,7 @@ export default function SearchBar() {
     }
 
     performSearch()
-  }, [debouncedQuery])
+  }, [debouncedQuery, authenticatedFetch])
 
   // Handle click outside
   useEffect(() => {

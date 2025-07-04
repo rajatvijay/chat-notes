@@ -3,6 +3,7 @@ import { MessageCircle, Edit2, Save, Calendar, Clock, Link, User, Hash, Trash2 }
 import Composer from '../components/Composer'
 import { supabase } from '../lib/supabase'
 import { useNoteOperations } from '../hooks/useNoteOperations'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface Note {
   id: string
@@ -21,6 +22,7 @@ export default function ChatPage() {
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [editingMetadata, setEditingMetadata] = useState<Record<string, unknown>>({})
   const { deleteNote, isDeleting } = useNoteOperations()
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   useEffect(() => {
     fetchRecentNotes()
@@ -63,9 +65,8 @@ export default function ChatPage() {
         setClassifyingNotes(prev => new Set([...prev, data.id]))
         
         try {
-          const response = await fetch('/api/classify', {
+          const response = await authenticatedFetch('/api/classify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ note_id: data.id, content })
           })
           
@@ -106,9 +107,8 @@ export default function ChatPage() {
 
       const note = notes.find(n => n.id === noteId)
       if (note) {
-        const response = await fetch('/api/classify', {
+        const response = await authenticatedFetch('/api/classify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             note_id: noteId, 
             content: note.content,

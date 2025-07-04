@@ -1,16 +1,15 @@
 import { useState } from 'react'
+import { useAuthenticatedFetch } from './useAuthenticatedFetch'
 
 export function useTaskOperations() {
   const [loading, setLoading] = useState(false)
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   const toggleTaskCompletion = async (noteId: string, completed: boolean) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/metadata', {
+      const response = await authenticatedFetch('/api/metadata', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: 'task_completion',
           note_id: noteId,
@@ -34,11 +33,8 @@ export function useTaskOperations() {
   const setTaskDueDate = async (noteId: string, dueDate: string) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/metadata', {
+      const response = await authenticatedFetch('/api/metadata', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           action: 'task_due_date',
           note_id: noteId,

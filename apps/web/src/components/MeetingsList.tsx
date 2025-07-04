@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@chatnotes/ui'
+import { useAuthenticatedFetch } from '../hooks/useAuthenticatedFetch'
 
 interface Note {
   id: string
@@ -31,6 +32,7 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
   const [editTitle, setEditTitle] = useState('')
   const [editDate, setEditDate] = useState('')
   const [editTime, setEditTime] = useState('')
+  const { authenticatedFetch } = useAuthenticatedFetch()
 
   if (notes.length === 0) {
     return (
@@ -113,9 +115,8 @@ export default function MeetingsList({ notes }: MeetingsListProps) {
     try {
       const noteIds = notes.map(note => note.id)
       
-      const response = await fetch('/api/metadata', {
+      const response = await authenticatedFetch('/api/metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update_meeting',
           note_ids: noteIds,

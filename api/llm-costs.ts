@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSupabaseClient } from './shared/supabase-utils.js'
+import { withAuth, SecurityContext } from './shared/middleware.js'
 
 interface CostSummary {
   totalCost: number
@@ -13,11 +14,11 @@ interface CostSummary {
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+  return withAuth(req, res, async (req, res, _context: SecurityContext) => {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
 
-  try {
     const supabase = getSupabaseClient()
 
     // Check if environment variables are available
@@ -43,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error) {
       console.error('Database query error:', error)
       // If the table doesn't exist yet, return empty data instead of failing
+      // PGRST116 is PostgREST error code for relation not found
       if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
         return res.status(200).json({
           totalCost: 0,
@@ -89,14 +91,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json(response)
-
-  } catch (error) {
-    console.error('LLM costs fetch error:', error)
-    // Return empty data instead of failing completely
-    return res.status(200).json({
-      totalCost: 0,
-      totalRequests: 0,
-      dailyBreakdown: []
-    })
-  }
+  })
 }

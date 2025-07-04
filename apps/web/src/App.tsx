@@ -6,56 +6,86 @@ import CategoryPage from './pages/CategoryPage'
 import CategoriesPage from './pages/CategoriesPage'
 import SearchPage from './pages/SearchPage'
 import SettingsPage from './pages/SettingsPage'
+import SignInPage from './pages/SignInPage'
 import AppLayout from './components/AppLayout'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './contexts/AuthContext'
 
 function App() {
   return (
-    <div className="max-w-md mx-auto">
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <AppLayout>
-              <ChatPage />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/tasks"
-          element={
-            <AppLayout>
-              <TasksPage />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/reading"
-          element={
-            <AppLayout>
-              <ReadingListPage />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/categories"
-          element={
-            <AppLayout>
-              <CategoriesPage />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <AppLayout>
-              <SettingsPage />
-            </AppLayout>
-          }
-        />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/c/:category" element={<CategoryPage />} />
-      </Routes>
-    </div>
+    <AuthProvider>
+      <div className="max-w-md mx-auto">
+        <Routes>
+          <Route path="/signin" element={<SignInPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ChatPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <TasksPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reading"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ReadingListPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CategoriesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <SettingsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/search" 
+            element={
+              <ProtectedRoute>
+                <SearchPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/c/:category" 
+            element={
+              <ProtectedRoute>
+                <CategoryPage />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </div>
+    </AuthProvider>
   )
 }
 
