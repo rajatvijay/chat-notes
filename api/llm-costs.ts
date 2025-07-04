@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getSupabaseClient } from './shared/supabase-utils.js'
-import { withAuth, SecurityContext } from './shared/middleware.js'
+import { withAuth } from './shared/middleware.js'
 
 interface CostSummary {
   totalCost: number
@@ -12,9 +12,8 @@ interface CostSummary {
   }>
 }
 
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  return withAuth(req, res, async (req, res, _context: SecurityContext) => {
+  return withAuth(req, res, async (req, res) => {
     if (req.method !== 'GET') {
       return res.status(405).json({ error: 'Method not allowed' })
     }
@@ -27,14 +26,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         totalCost: 0,
         totalRequests: 0,
-        dailyBreakdown: []
+        dailyBreakdown: [],
       })
     }
 
     // Get cost data from the last 30 days
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    
+
     const { data: costs, error } = await supabase
       .from('llm_costs')
       .select('date, cost_usd, endpoint')
@@ -45,11 +44,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('Database query error:', error)
       // If the table doesn't exist yet, return empty data instead of failing
       // PGRST116 is PostgREST error code for relation not found
-      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+      if (
+        error.code === 'PGRST116' ||
+        error.message?.includes('does not exist')
+      ) {
         return res.status(200).json({
           totalCost: 0,
           totalRequests: 0,
-          dailyBreakdown: []
+          dailyBreakdown: [],
         })
       }
       throw new Error('Failed to fetch cost data')
@@ -59,18 +61,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const costsData = costs || []
 
     // Calculate totals and daily breakdown
-    const totalCost = costsData.reduce((sum, entry) => sum + Number(entry.cost_usd || 0), 0)
+    const totalCost = costsData.reduce(
+      (sum, entry) => sum + Number(entry.cost_usd || 0),
+      0
+    )
     const totalRequests = costsData.length
 
     // Group by date for daily breakdown
     const dailyMap = new Map<string, { cost: number; requests: number }>()
-    
-    costsData.forEach(entry => {
+
+    costsData.forEach((entry) => {
       const date = entry.date
       const existing = dailyMap.get(date) || { cost: 0, requests: 0 }
       dailyMap.set(date, {
         cost: existing.cost + Number(entry.cost_usd || 0),
-        requests: existing.requests + 1
+        requests: existing.requests + 1,
       })
     })
 
@@ -79,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map(([date, data]) => ({
         date,
         cost: data.cost,
-        requests: data.requests
+        requests: data.requests,
       }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 7) // Only show last 7 days
@@ -87,7 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response: CostSummary = {
       totalCost,
       totalRequests,
-      dailyBreakdown
+      dailyBreakdown,
     }
 
     return res.status(200).json(response)
