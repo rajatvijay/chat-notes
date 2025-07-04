@@ -1,18 +1,13 @@
-const CACHE_NAME = 'chatnotes-v2.1'
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/icon.svg'
-]
+const CACHE_NAME = 'chatnotes-v2.2'
+const urlsToCache = ['/', '/manifest.json', '/icon.svg']
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache')
-        return cache.addAll(urlsToCache)
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Opened cache')
+      return cache.addAll(urlsToCache)
+    })
   )
   self.skipWaiting()
 })
@@ -47,16 +42,20 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response
-        }
+    caches.match(event.request).then((response) => {
+      // Return cached version or fetch from network
+      if (response) {
+        return response
+      }
 
-        return fetch(event.request).then((response) => {
+      return fetch(event.request)
+        .then((response) => {
           // Check if we received a valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+          if (
+            !response ||
+            response.status !== 200 ||
+            response.type !== 'basic'
+          ) {
             return response
           }
 
@@ -64,26 +63,28 @@ self.addEventListener('fetch', (event) => {
           const responseToCache = response.clone()
 
           // Add to cache for static assets
-          if (event.request.url.includes('/assets/') || 
-              event.request.url.endsWith('.js') || 
-              event.request.url.endsWith('.css') ||
-              event.request.url.endsWith('.png') ||
-              event.request.url.endsWith('.svg') ||
-              event.request.url.endsWith('.ico')) {
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache)
-              })
+          if (
+            event.request.url.includes('/assets/') ||
+            event.request.url.endsWith('.js') ||
+            event.request.url.endsWith('.css') ||
+            event.request.url.endsWith('.png') ||
+            event.request.url.endsWith('.svg') ||
+            event.request.url.endsWith('.ico')
+          ) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache)
+            })
           }
 
           return response
-        }).catch(() => {
+        })
+        .catch(() => {
           // If both cache and network fail, return offline page for navigation requests
           if (event.request.mode === 'navigate') {
             return caches.match('/')
           }
         })
-      })
+    })
   )
 })
 
@@ -111,19 +112,15 @@ self.addEventListener('push', (event) => {
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
-        primaryKey: data.primaryKey
-      }
+        primaryKey: data.primaryKey,
+      },
     }
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    )
+    event.waitUntil(self.registration.showNotification(data.title, options))
   }
 })
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(
-    clients.openWindow('/')
-  )
+  event.waitUntil(clients.openWindow('/'))
 })
